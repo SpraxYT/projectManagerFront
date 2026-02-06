@@ -19,7 +19,7 @@ export default function LoginPage() {
     const loadSettings = async () => {
       try {
         const response = await api.get('/settings');
-        setRegistrationEnabled(response.settings?.enableRegistration ?? true);
+        setRegistrationEnabled((response as { settings?: { enableRegistration?: boolean } }).settings?.enableRegistration ?? true);
       } catch (error) {
         // En cas d'erreur, utiliser la valeur par défaut
         setRegistrationEnabled(true);

@@ -41,7 +41,21 @@ export default function RolesPage() {
   };
 
   const handleDelete = async (role: any) => {
-    if (!confirm(`Êtes-vous sûr de vouloir supprimer le rôle "${role.name}" ?`)) {
+    const userCount = role._count?.users || 0;
+    
+    let message = `⚠️ ATTENTION : Cette action est irréversible !\n\n` +
+      `Êtes-vous sûr de vouloir supprimer le rôle "${role.name}" ?\n\n`;
+    
+    if (userCount > 0) {
+      message += `⚠️ ATTENTION : ${userCount} utilisateur${userCount > 1 ? 's' : ''} ${userCount > 1 ? 'sont' : 'est'} actuellement assigné${userCount > 1 ? 's' : ''} à ce rôle !\n` +
+        `${userCount > 1 ? 'Ils' : 'Il'} ${userCount > 1 ? 'perdront' : 'perdra'} leurs permissions personnalisées.\n\n`;
+    }
+    
+    message += `Cette action supprimera définitivement le rôle et toutes ses permissions.`;
+    
+    const confirmed = window.confirm(message);
+    
+    if (!confirmed) {
       return;
     }
 

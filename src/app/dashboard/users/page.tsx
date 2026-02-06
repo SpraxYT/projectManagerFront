@@ -42,7 +42,17 @@ export default function UsersPage() {
   };
 
   const handleDelete = async (user: any) => {
-    if (!confirm(`Êtes-vous sûr de vouloir supprimer ${user.firstName} ${user.lastName} ?`)) {
+    const confirmed = window.confirm(
+      `⚠️ ATTENTION : Cette action est irréversible !\n\n` +
+      `Êtes-vous sûr de vouloir supprimer l'utilisateur :\n` +
+      `${user.firstName} ${user.lastName} (${user.email}) ?\n\n` +
+      `Toutes les données associées seront définitivement supprimées :\n` +
+      `- Logs d'activité\n` +
+      `- Appartenance aux projets\n` +
+      `- Tokens de session`
+    );
+    
+    if (!confirmed) {
       return;
     }
 
