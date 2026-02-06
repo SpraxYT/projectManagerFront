@@ -5,6 +5,9 @@ import { useParams, useRouter } from 'next/navigation';
 import { api } from '@/lib/api';
 import Button from '@/components/ui/Button';
 import Link from 'next/link';
+import ProjectModal from '@/components/modals/ProjectModal';
+import AddMemberModal from '@/components/modals/AddMemberModal';
+import CredentialModal from '@/components/modals/CredentialModal';
 
 type ProjectStatus = 'ACTIVE' | 'PAUSED' | 'ARCHIVED' | 'COMPLETED';
 
@@ -60,6 +63,12 @@ export default function ProjectDetailPage() {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'info' | 'members' | 'credentials'>('info');
   const [revealedPasswords, setRevealedPasswords] = useState<Record<string, string>>({});
+  
+  // États des modals
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [showAddMemberModal, setShowAddMemberModal] = useState(false);
+  const [showCredentialModal, setShowCredentialModal] = useState(false);
+  const [editingCredential, setEditingCredential] = useState<Credential | null>(null);
 
   useEffect(() => {
     loadProject();
@@ -104,8 +113,24 @@ export default function ProjectDetailPage() {
     }
   };
 
+  const handleEditProject = async (data: any) => {
+    try {
+      await api.updateProject(projectId, data);
+      await loadProject();
+    } catch (error: any) {
+      alert(error.error || 'Erreur lors de la mise à jour');
+      throw error;
+    }
+  };
+
   const deleteProject = async () => {
-    if (!confirm('Êtes-vous sûr de vouloir supprimer ce projet ?')) return;
+    const confirmed = window.confirm(
+      '⚠️ ATTENTION : Cette action est irréversible !\n\n' +
+      `Êtes-vous sûr de vouloir supprimer le projet "${project?.name}" ?\n\n` +
+      'Toutes les données associées (membres, mots de passe) seront définitivement supprimées.'
+    );
+    
+    if (!confirmed) return;
 
     try {
       await api.deleteProject(projectId);
@@ -113,6 +138,65 @@ export default function ProjectDetailPage() {
     } catch (error: any) {
       alert(error.error || 'Erreur lors de la suppression');
     }
+  };
+
+  const handleAddMember = async (userId: string, role: string) => {
+    try {
+      await api.addProjectMember(projectId, { userId, role });
+      await loadProject();
+    } catch (error: any) {
+      alert(error.error || 'Erreur lors de l\'ajout du membre');
+      throw error;
+    }
+  };
+
+  const handleRemoveMember = async (userId: string) => {
+    const confirmed = window.confirm('Êtes-vous sûr de vouloir retirer ce membre ?');
+    if (!confirmed) return;
+
+    try {
+      await api.removeProjectMember(projectId, userId);
+      await loadProject();
+    } catch (error: any) {
+      alert(error.error || 'Erreur lors de la suppression du membre');
+    }
+  };
+
+  const handleSaveCredential = async (data: any) => {
+    try {
+      if (editingCredential) {
+        await api.updateProjectCredential(projectId, editingCredential.id, data);
+      } else {
+        await api.createProjectCredential(projectId, data);
+      }
+      await loadCredentials();
+      setEditingCredential(null);
+    } catch (error: any) {
+      alert(error.error || 'Erreur lors de l\'enregistrement');
+      throw error;
+    }
+  };
+
+  const handleDeleteCredential = async (credentialId: string) => {
+    const confirmed = window.confirm('Êtes-vous sûr de vouloir supprimer ce mot de passe ?');
+    if (!confirmed) return;
+
+    try {
+      await api.deleteProjectCredential(projectId, credentialId);
+      await loadCredentials();
+    } catch (error: any) {
+      alert(error.error || 'Erreur lors de la suppression');
+    }
+  };
+
+  const openEditCredential = (credential: Credential) => {
+    setEditingCredential(credential);
+    setShowCredentialModal(true);
+  };
+
+  const openNewCredential = () => {
+    setEditingCredential(null);
+    setShowCredentialModal(true);
   };
 
   if (loading || !project) {
@@ -168,8 +252,12 @@ export default function ProjectDetailPage() {
             )}
           </div>
           <div className="flex space-x-2">
-            <Button variant="secondary" size="sm">Éditer</Button>
-            <Button variant="danger" size="sm" onClick={deleteProject}>Supprimer</Button>
+            <Button variant="secondary" size="sm" onClick={() => setShowEditModal(true)}>
+              Éditer
+            </Button>
+            <Button variant="danger" size="sm" onClick={deleteProject}>
+              Supprimer
+            </Button>
           </div>
         </div>
       </div>
@@ -180,7 +268,7 @@ export default function ProjectDetailPage() {
           {[
             { id: 'info', label: 'Informations', icon: 'ℹ️' },
             { id: 'members', label: 'Membres', icon: '👥', count: project.members.length },
-            { id: 'credentials', label: 'Credentials', icon: '🔑', count: project._count.credentials },
+            { id: 'credentials', label: 'Mots de passe', icon: '🔑', count: project._count.credentials },
           ].map((tab) => (
             <button
               key={tab.id}
@@ -294,7 +382,9 @@ export default function ProjectDetailPage() {
           <div className="rounded-lg bg-white p-6 shadow">
             <div className="mb-4 flex items-center justify-between">
               <h2 className="text-lg font-semibold text-gray-900">Membres du projet</h2>
-              <Button size="sm">Ajouter un membre</Button>
+              <Button size="sm" onClick={() => setShowAddMemberModal(true)}>
+                Ajouter un membre
+              </Button>
             </div>
 
             <div className="space-y-2">
@@ -319,7 +409,11 @@ export default function ProjectDetailPage() {
                       {member.role}
                     </span>
                     {member.role !== 'OWNER' && (
-                      <button className="text-red-600 hover:text-red-800">
+                      <button
+                        onClick={() => handleRemoveMember(member.user.id)}
+                        className="text-red-600 hover:text-red-800"
+                        title="Retirer du projet"
+                      >
                         <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                         </svg>
@@ -335,13 +429,15 @@ export default function ProjectDetailPage() {
         {activeTab === 'credentials' && (
           <div className="rounded-lg bg-white p-6 shadow">
             <div className="mb-4 flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-gray-900">Credentials</h2>
-              <Button size="sm">Ajouter un credential</Button>
+              <h2 className="text-lg font-semibold text-gray-900">Mots de passe</h2>
+              <Button size="sm" onClick={openNewCredential}>
+                Ajouter un mot de passe
+              </Button>
             </div>
 
             {credentials.length === 0 ? (
               <div className="text-center py-8 text-gray-600">
-                Aucun credential enregistré
+                Aucun mot de passe enregistré
               </div>
             ) : (
               <div className="space-y-3">
@@ -354,34 +450,41 @@ export default function ProjectDetailPage() {
                       <div className="flex-1">
                         <div className="flex items-center space-x-2 mb-2">
                           <span className="rounded bg-blue-100 px-2 py-1 text-xs font-medium text-blue-800">
-                            {cred.type}
+                            {cred.type === 'FTP' && 'FTP'}
+                            {cred.type === 'DATABASE' && 'Base de données'}
+                            {cred.type === 'ADMIN' && 'Admin'}
+                            {cred.type === 'API' && 'API'}
+                            {cred.type === 'SSH' && 'SSH'}
+                            {cred.type === 'OTHER' && 'Autre'}
                           </span>
                           <h3 className="font-medium text-gray-900">{cred.name}</h3>
                         </div>
                         
                         {cred.username && (
                           <p className="text-sm text-gray-600 mb-1">
-                            <span className="font-medium">Username:</span> {cred.username}
+                            <span className="font-medium">Utilisateur :</span> {cred.username}
                           </p>
                         )}
                         
                         <div className="text-sm text-gray-600 mb-1">
-                          <span className="font-medium">Password:</span>{' '}
+                          <span className="font-medium">Mot de passe :</span>{' '}
                           {revealedPasswords[cred.id] ? (
-                            <span className="font-mono">{revealedPasswords[cred.id]}</span>
+                            <span className="font-mono bg-gray-100 px-2 py-1 rounded">
+                              {revealedPasswords[cred.id]}
+                            </span>
                           ) : (
                             <button
                               onClick={() => revealPassword(cred.id)}
                               className="text-blue-600 hover:underline"
                             >
-                              Révéler
+                              Cliquer pour révéler
                             </button>
                           )}
                         </div>
                         
                         {cred.url && (
                           <p className="text-sm text-gray-600">
-                            <span className="font-medium">URL:</span>{' '}
+                            <span className="font-medium">URL :</span>{' '}
                             <a href={cred.url} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
                               {cred.url}
                             </a>
@@ -390,16 +493,31 @@ export default function ProjectDetailPage() {
                         
                         {cred.notes && (
                           <p className="text-sm text-gray-600 mt-2">
-                            <span className="font-medium">Notes:</span> {cred.notes}
+                            <span className="font-medium">Notes :</span> {cred.notes}
                           </p>
                         )}
                       </div>
                       
-                      <button className="text-red-600 hover:text-red-800">
-                        <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                        </svg>
-                      </button>
+                      <div className="flex space-x-2">
+                        <button
+                          onClick={() => openEditCredential(cred)}
+                          className="text-gray-600 hover:text-gray-900"
+                          title="Modifier"
+                        >
+                          <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                          </svg>
+                        </button>
+                        <button
+                          onClick={() => handleDeleteCredential(cred.id)}
+                          className="text-red-600 hover:text-red-800"
+                          title="Supprimer"
+                        >
+                          <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                          </svg>
+                        </button>
+                      </div>
                     </div>
                   </div>
                 ))}
@@ -408,6 +526,32 @@ export default function ProjectDetailPage() {
           </div>
         )}
       </div>
+
+      {/* Modals */}
+      <ProjectModal
+        isOpen={showEditModal}
+        onClose={() => setShowEditModal(false)}
+        onSave={handleEditProject}
+        project={project}
+      />
+
+      <AddMemberModal
+        isOpen={showAddMemberModal}
+        onClose={() => setShowAddMemberModal(false)}
+        onSave={handleAddMember}
+        projectId={projectId}
+        existingMembers={project?.members.map(m => m.user.id) || []}
+      />
+
+      <CredentialModal
+        isOpen={showCredentialModal}
+        onClose={() => {
+          setShowCredentialModal(false);
+          setEditingCredential(null);
+        }}
+        onSave={handleSaveCredential}
+        credential={editingCredential}
+      />
     </div>
   );
 }
