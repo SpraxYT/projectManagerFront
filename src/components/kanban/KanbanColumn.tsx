@@ -68,16 +68,19 @@ export default function KanbanColumn({
   const taskIds = tasks.map((task) => task.id);
 
   return (
-    <div className="flex h-full min-w-[320px] max-w-[320px] flex-col rounded-lg bg-gray-50">
+    <div className="flex h-full min-w-[320px] max-w-[320px] flex-col rounded-lg border-2 border-gray-300 bg-white shadow-md">
       {/* Header */}
-      <div className="flex items-center justify-between border-b border-gray-200 p-4">
+      <div 
+        className="flex items-center justify-between p-4"
+        style={{ borderBottom: `3px solid ${column.color}` }}
+      >
         <div className="flex items-center gap-2">
           <div
-            className="h-3 w-3 rounded-full"
+            className="h-3 w-3 rounded-full shadow-sm"
             style={{ backgroundColor: column.color }}
           />
-          <h3 className="font-semibold text-gray-900">{column.name}</h3>
-          <span className="rounded-full bg-gray-200 px-2 py-0.5 text-xs font-medium text-gray-600">
+          <h3 className="font-bold text-gray-900">{column.name}</h3>
+          <span className="rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-semibold text-gray-700 shadow-sm">
             {tasks.length}
           </span>
         </div>
@@ -86,7 +89,7 @@ export default function KanbanColumn({
       {/* Tasks */}
       <div
         ref={setNodeRef}
-        className="flex-1 space-y-2 overflow-y-auto p-3"
+        className="flex-1 space-y-3 overflow-y-auto p-4 bg-gray-50/50"
         style={{ minHeight: '200px' }}
       >
         <SortableContext items={taskIds} strategy={verticalListSortingStrategy}>
@@ -100,7 +103,7 @@ export default function KanbanColumn({
         </SortableContext>
 
         {tasks.length === 0 && (
-          <div className="flex h-full items-center justify-center text-sm text-gray-400">
+          <div className="flex h-full items-center justify-center text-sm text-gray-400 font-medium">
             Aucune tâche
           </div>
         )}
@@ -108,15 +111,13 @@ export default function KanbanColumn({
 
       {/* Add Task Button */}
       {canEdit && (
-        <div className="border-t border-gray-200 p-3">
-          <Button
-            variant="ghost"
-            size="sm"
+        <div className="border-t border-gray-200 p-3 bg-white">
+          <button
             onClick={onCreateTask}
-            className="w-full justify-start text-gray-600 hover:text-gray-900"
+            className="w-full text-left text-sm text-gray-500 hover:text-gray-700 transition-colors py-2 px-3 rounded hover:bg-gray-50"
           >
             + Ajouter une tâche
-          </Button>
+          </button>
         </div>
       )}
     </div>

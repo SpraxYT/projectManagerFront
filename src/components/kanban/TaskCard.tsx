@@ -81,8 +81,8 @@ export default function TaskCard({ task, onClick, isDragging }: TaskCardProps) {
       {...attributes}
       {...listeners}
       onClick={onClick}
-      className={`cursor-pointer rounded-lg bg-white p-3 shadow-sm transition-shadow hover:shadow-md ${
-        isDragging ? 'rotate-3 scale-105' : ''
+      className={`cursor-pointer rounded-lg border border-gray-200 bg-white p-4 shadow-sm transition-all hover:shadow-lg hover:border-blue-300 ${
+        isDragging ? 'rotate-3 scale-105 shadow-xl' : ''
       }`}
     >
       {/* Labels */}
