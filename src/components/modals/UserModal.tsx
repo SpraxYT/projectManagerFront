@@ -20,12 +20,28 @@ export default function UserModal({ isOpen, onClose, onSuccess, user }: UserModa
     lastName: '',
     password: '',
     role: 'MEMBER',
+    customRoleId: null as string | null,
     isActive: true,
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [customRoles, setCustomRoles] = useState<any[]>([]);
 
   useEffect(() => {
+    // Charger les rôles personnalisés
+    const loadRoles = async () => {
+      try {
+        const response = await api.getRoles({ limit: 100 });
+        setCustomRoles(response.roles || []);
+      } catch (error) {
+        console.error('Erreur chargement rôles:', error);
+      }
+    };
+
+    if (isOpen) {
+      loadRoles();
+    }
+
     if (user) {
       setFormData({
         email: user.email || '',
@@ -33,6 +49,7 @@ export default function UserModal({ isOpen, onClose, onSuccess, user }: UserModa
         lastName: user.lastName || '',
         password: '',
         role: user.role || 'MEMBER',
+        customRoleId: user.customRoleId || null,
         isActive: user.isActive ?? true,
       });
     } else {
@@ -42,6 +59,7 @@ export default function UserModal({ isOpen, onClose, onSuccess, user }: UserModa
         lastName: '',
         password: '',
         role: 'MEMBER',
+        customRoleId: null,
         isActive: true,
       });
     }
@@ -61,6 +79,7 @@ export default function UserModal({ isOpen, onClose, onSuccess, user }: UserModa
           firstName: formData.firstName,
           lastName: formData.lastName,
           role: formData.role,
+          customRoleId: formData.role === 'CUSTOM' ? formData.customRoleId : null,
           isActive: formData.isActive,
         };
         if (formData.password) {
@@ -68,8 +87,16 @@ export default function UserModal({ isOpen, onClose, onSuccess, user }: UserModa
         }
         await api.updateUser(user.id, updateData);
       } else {
-        // Création - utiliser l'API register pour créer un utilisateur
-        await api.post('/users', formData);
+        // Création
+        const createData: any = {
+          email: formData.email,
+          firstName: formData.firstName,
+          lastName: formData.lastName,
+          password: formData.password,
+          role: formData.role,
+          customRoleId: formData.role === 'CUSTOM' ? formData.customRoleId : null,
+        };
+        await api.post('/users', createData);
       }
       onSuccess();
       onClose();
@@ -127,16 +154,51 @@ export default function UserModal({ isOpen, onClose, onSuccess, user }: UserModa
           </label>
           <select
             value={formData.role}
-            onChange={(e) => setFormData({ ...formData, role: e.target.value })}
+            onChange={(e) => {
+              const newRole = e.target.value;
+              setFormData({ 
+                ...formData, 
+                role: newRole,
+                customRoleId: newRole === 'CUSTOM' ? (customRoles[0]?.id || null) : null
+              });
+            }}
             className="w-full rounded-lg border border-gray-300 px-4 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
             required
           >
-            <option value="MEMBER">Membre</option>
-            <option value="MANAGER">Manager</option>
-            <option value="ADMIN">Administrateur</option>
-            <option value="OWNER">Propriétaire</option>
+            <optgroup label="Rôles prédéfinis">
+              <option value="MEMBER">Membre</option>
+              <option value="MANAGER">Manager</option>
+              <option value="ADMIN">Administrateur</option>
+              <option value="OWNER">Propriétaire</option>
+            </optgroup>
+            {customRoles.length > 0 && (
+              <optgroup label="Rôles personnalisés">
+                <option value="CUSTOM">Rôle personnalisé</option>
+              </optgroup>
+            )}
           </select>
         </div>
+
+        {formData.role === 'CUSTOM' && customRoles.length > 0 && (
+          <div>
+            <label className="mb-2 block text-sm font-medium text-gray-700">
+              Sélectionner le rôle personnalisé <span className="text-red-500">*</span>
+            </label>
+            <select
+              value={formData.customRoleId || ''}
+              onChange={(e) => setFormData({ ...formData, customRoleId: e.target.value })}
+              className="w-full rounded-lg border border-gray-300 px-4 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              required
+            >
+              <option value="">Choisir un rôle...</option>
+              {customRoles.map((role) => (
+                <option key={role.id} value={role.id}>
+                  {role.name}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
 
         {user && (
           <div className="flex items-center">

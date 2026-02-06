@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuthStore } from '@/store/authStore';
 import { getRoleLabel } from '@/lib/utils';
 import { api } from '@/lib/api';
@@ -19,6 +19,17 @@ export default function SettingsPage() {
     email: user?.email || '',
   });
 
+  // Synchroniser profileData avec user
+  useEffect(() => {
+    if (user) {
+      setProfileData({
+        firstName: user.firstName || '',
+        lastName: user.lastName || '',
+        email: user.email || '',
+      });
+    }
+  }, [user]);
+
   const [passwordData, setPasswordData] = useState({
     currentPassword: '',
     newPassword: '',
@@ -34,6 +45,7 @@ export default function SettingsPage() {
       await api.updateUser(user!.id, profileData);
       await loadUser();
       setMessage('Profil mis à jour avec succès');
+      setTimeout(() => setMessage(''), 3000);
     } catch (error: any) {
       setMessage(error.error || 'Erreur lors de la mise à jour');
     } finally {
@@ -58,6 +70,7 @@ export default function SettingsPage() {
       });
       setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
       setMessage('Mot de passe mis à jour avec succès');
+      setTimeout(() => setMessage(''), 3000);
     } catch (error: any) {
       setMessage(error.error || 'Erreur lors de la mise à jour');
     } finally {
@@ -244,44 +257,57 @@ export default function SettingsPage() {
 
         {activeTab === 'instance' && (
           <div className="rounded-lg bg-white p-6 shadow">
-              <h2 className="text-xl font-semibold text-gray-900 mb-6">Paramètres de l'instance</h2>
-              
-              <div className="space-y-6">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Nom de l'instance
-                  </label>
+            <h2 className="text-xl font-semibold text-gray-900 mb-6">Paramètres de l'instance</h2>
+            
+            <div className="space-y-6">
+              <div className="rounded-lg bg-blue-50 p-4 text-sm text-blue-800">
+                ℹ️ Ces paramètres sont configurés dans les variables d'environnement. 
+                Pour les modifier, éditez le fichier <code className="bg-blue-100 px-1 rounded">.env.local</code> 
+                et redémarrez le serveur frontend.
+              </div>
+
+              <Input
+                label="Nom de l'instance"
+                value={process.env.NEXT_PUBLIC_INSTANCE_NAME || 'ProjectManager'}
+                disabled
+              />
+              <p className="mt-1 text-xs text-gray-500 -mt-3">
+                Ce nom apparaît dans la barre latérale et les emails
+              </p>
+
+              <div>
+                <label className="flex items-center space-x-3">
                   <input
-                    type="text"
-                    defaultValue={process.env.NEXT_PUBLIC_INSTANCE_NAME || 'ProjectManager'}
-                    className="w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    type="checkbox"
+                    checked={process.env.NEXT_PUBLIC_ENABLE_REGISTRATION === 'true'}
+                    disabled
+                    className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                   />
-                  <p className="mt-1 text-xs text-gray-500">
-                    Ce nom apparaît dans la barre latérale et les emails
-                  </p>
-                </div>
+                  <span className="text-sm text-gray-700">Autoriser l'inscription publique</span>
+                </label>
+                <p className="ml-7 mt-1 text-xs text-gray-500">
+                  Les utilisateurs peuvent créer un compte sans invitation
+                </p>
+              </div>
 
-                <div>
-                  <label className="flex items-center space-x-3">
-                    <input
-                      type="checkbox"
-                      defaultChecked={process.env.NEXT_PUBLIC_ENABLE_REGISTRATION === 'true'}
-                      className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                    />
-                    <span className="text-sm text-gray-700">Autoriser l'inscription publique</span>
-                  </label>
-                  <p className="ml-7 mt-1 text-xs text-gray-500">
-                    Les utilisateurs peuvent créer un compte sans invitation
-                  </p>
-                </div>
-
-              <div className="flex justify-end space-x-3 pt-6 border-t">
-                <Button type="button" variant="secondary">
-                  Annuler
-                </Button>
-                <Button type="submit">
-                  Enregistrer
-                </Button>
+              <div className="rounded-lg bg-gray-50 p-4">
+                <h4 className="text-sm font-medium text-gray-900 mb-2">Configuration actuelle</h4>
+                <dl className="space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <dt className="text-gray-600">Nom :</dt>
+                    <dd className="font-medium text-gray-900">{process.env.NEXT_PUBLIC_INSTANCE_NAME || 'ProjectManager'}</dd>
+                  </div>
+                  <div className="flex justify-between">
+                    <dt className="text-gray-600">API URL :</dt>
+                    <dd className="font-medium text-gray-900">{process.env.NEXT_PUBLIC_API_URL}</dd>
+                  </div>
+                  <div className="flex justify-between">
+                    <dt className="text-gray-600">Inscription :</dt>
+                    <dd className="font-medium text-gray-900">
+                      {process.env.NEXT_PUBLIC_ENABLE_REGISTRATION === 'true' ? 'Activée' : 'Désactivée'}
+                    </dd>
+                  </div>
+                </dl>
               </div>
             </div>
           </div>

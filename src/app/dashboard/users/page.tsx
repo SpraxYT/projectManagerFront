@@ -166,9 +166,21 @@ export default function UsersPage() {
                       {user.email}
                     </td>
                     <td className="whitespace-nowrap px-6 py-4">
-                      <span className={`inline-flex rounded-full px-2 py-1 text-xs font-semibold ${getRoleColor(user.role)}`}>
-                        {getRoleLabel(user.role)}
-                      </span>
+                      {user.role === 'CUSTOM' && user.customRole ? (
+                        <span
+                          className="inline-flex items-center rounded-full px-2 py-1 text-xs font-semibold"
+                          style={{
+                            backgroundColor: user.customRole.color ? `${user.customRole.color}20` : '#E5E7EB',
+                            color: user.customRole.color || '#374151'
+                          }}
+                        >
+                          {user.customRole.name}
+                        </span>
+                      ) : (
+                        <span className={`inline-flex rounded-full px-2 py-1 text-xs font-semibold ${getRoleColor(user.role)}`}>
+                          {getRoleLabel(user.role)}
+                        </span>
+                      )}
                     </td>
                     <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
                       {user.lastLoginAt ? formatRelativeDate(user.lastLoginAt) : 'Jamais'}
