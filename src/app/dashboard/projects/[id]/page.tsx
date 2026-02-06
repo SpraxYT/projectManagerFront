@@ -588,6 +588,191 @@ export default function ProjectDetailPage() {
           </div>
         )}
 
+        {activeTab === 'members' && (
+          <div className="rounded-lg bg-white p-6 shadow">
+            <div className="mb-4 flex items-center justify-between">
+              <h2 className="text-lg font-semibold text-gray-900">Membres du projet</h2>
+              {canManageMembers() && (
+                <Button size="sm" onClick={() => setShowAddMemberModal(true)}>
+                  Ajouter un membre
+                </Button>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              {project.members.map((member) => (
+                <div
+                  key={member.user.id}
+                  className="flex items-center justify-between rounded-lg border border-gray-200 p-4"
+                >
+                  <div className="flex items-center space-x-3">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-100 text-sm font-semibold text-blue-600">
+                      {member.user.firstName.charAt(0)}{member.user.lastName.charAt(0)}
+                    </div>
+                    <div>
+                      <p className="font-medium text-gray-900">
+                        {member.user.firstName} {member.user.lastName}
+                      </p>
+                      <p className="text-sm text-gray-600">{member.user.email}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    {canManageMembers() ? (
+                      <button
+                        onClick={() => handleChangeMemberRole(
+                          member.user.id,
+                          member.role,
+                          `${member.user.firstName} ${member.user.lastName}`
+                        )}
+                        className="rounded-full bg-gray-100 px-3 py-1 text-sm font-medium text-gray-800 hover:bg-gray-200 transition-colors cursor-pointer"
+                        title="Cliquer pour changer le rôle"
+                      >
+                        {member.role === 'OWNER' && '👑 Propriétaire'}
+                        {member.role === 'MEMBER' && '👤 Membre'}
+                        {member.role === 'VIEWER' && '👁️ Lecteur'}
+                      </button>
+                    ) : (
+                      <span className="rounded-full bg-gray-100 px-3 py-1 text-sm font-medium text-gray-800">
+                        {member.role === 'OWNER' && '👑 Propriétaire'}
+                        {member.role === 'MEMBER' && '👤 Membre'}
+                        {member.role === 'VIEWER' && '👁️ Lecteur'}
+                      </span>
+                    )}
+                    {canManageMembers() && member.role !== 'OWNER' && (
+                      <button
+                        onClick={() => handleRemoveMember(
+                          member.user.id,
+                          `${member.user.firstName} ${member.user.lastName}`
+                        )}
+                        className="text-red-600 hover:text-red-800"
+                        title="Retirer du projet"
+                      >
+                        <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      </button>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'credentials' && (
+          <div className="rounded-lg bg-white p-6 shadow">
+            <div className="mb-4 flex items-center justify-between">
+              <h2 className="text-lg font-semibold text-gray-900">Mots de passe</h2>
+              {canRevealPasswords() && (
+                <Button size="sm" onClick={openNewCredential}>
+                  Ajouter un mot de passe
+                </Button>
+              )}
+            </div>
+
+            {!canRevealPasswords() && (
+              <div className="mb-4 rounded-lg bg-yellow-50 border border-yellow-200 p-3 text-sm text-yellow-800">
+                ℹ️ Vous êtes <strong>Lecteur</strong> sur ce projet. Vous ne pouvez pas voir les mots de passe.
+              </div>
+            )}
+
+            {credentials.length === 0 ? (
+              <div className="text-center py-8 text-gray-600">
+                Aucun mot de passe enregistré
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {credentials.map((cred) => (
+                  <div
+                    key={cred.id}
+                    className="rounded-lg border border-gray-200 p-4"
+                  >
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-center space-x-2 mb-2">
+                          <span className="rounded bg-blue-100 px-2 py-1 text-xs font-medium text-blue-800">
+                            {cred.type === 'FTP' && 'FTP'}
+                            {cred.type === 'DATABASE' && 'Base de données'}
+                            {cred.type === 'ADMIN' && 'Admin'}
+                            {cred.type === 'API' && 'API'}
+                            {cred.type === 'SSH' && 'SSH'}
+                            {cred.type === 'OTHER' && 'Autre'}
+                          </span>
+                          <h3 className="font-medium text-gray-900">{cred.name}</h3>
+                        </div>
+                        
+                        {cred.username && (
+                          <p className="text-sm text-gray-600 mb-1">
+                            <span className="font-medium">Utilisateur :</span> {cred.username}
+                          </p>
+                        )}
+                        
+                        <div className="text-sm text-gray-600 mb-1">
+                          <span className="font-medium">Mot de passe :</span>{' '}
+                          {canRevealPasswords() ? (
+                            revealedPasswords[cred.id] ? (
+                              <span className="font-mono bg-gray-100 px-2 py-1 rounded">
+                                {revealedPasswords[cred.id]}
+                              </span>
+                            ) : (
+                              <button
+                                onClick={() => revealPassword(cred.id)}
+                                className="text-blue-600 hover:underline"
+                              >
+                                Cliquer pour révéler
+                              </button>
+                            )
+                          ) : (
+                            <span className="text-gray-400">••••••••</span>
+                          )}
+                        </div>
+                        
+                        {cred.url && (
+                          <p className="text-sm text-gray-600">
+                            <span className="font-medium">URL :</span>{' '}
+                            <a href={cred.url} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
+                              {cred.url}
+                            </a>
+                          </p>
+                        )}
+                        
+                        {cred.notes && (
+                          <p className="text-sm text-gray-600 mt-2">
+                            <span className="font-medium">Notes :</span> {cred.notes}
+                          </p>
+                        )}
+                      </div>
+                      
+                      {canRevealPasswords() && (
+                        <div className="flex space-x-2">
+                          <button
+                            onClick={() => openEditCredential(cred)}
+                            className="text-gray-600 hover:text-gray-900"
+                            title="Modifier"
+                          >
+                            <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                            </svg>
+                          </button>
+                          <button
+                            onClick={() => handleDeleteCredential(cred.id)}
+                            className="text-red-600 hover:text-red-800"
+                            title="Supprimer"
+                          >
+                            <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
         {activeTab === 'settings' && (
           <div className="space-y-6">
             <div className="rounded-lg bg-white p-6 shadow">
@@ -668,191 +853,6 @@ export default function ProjectDetailPage() {
                   </dd>
                 </div>
               </dl>
-            </div>
-          </div>
-        )}
-      </div>
-              <div className="rounded-lg bg-white p-6 shadow">
-                <div className="mb-4 flex items-center justify-between">
-                  <h2 className="text-lg font-semibold text-gray-900">Membres du projet</h2>
-                  {canManageMembers() && (
-                    <Button size="sm" onClick={() => setShowAddMemberModal(true)}>
-                      Ajouter un membre
-                    </Button>
-                  )}
-                </div>
-
-                <div className="space-y-2">
-                  {project.members.map((member) => (
-                    <div
-                      key={member.user.id}
-                      className="flex items-center justify-between rounded-lg border border-gray-200 p-4"
-                    >
-                      <div className="flex items-center space-x-3">
-                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-100 text-sm font-semibold text-blue-600">
-                          {member.user.firstName.charAt(0)}{member.user.lastName.charAt(0)}
-                        </div>
-                        <div>
-                          <p className="font-medium text-gray-900">
-                            {member.user.firstName} {member.user.lastName}
-                          </p>
-                          <p className="text-sm text-gray-600">{member.user.email}</p>
-                        </div>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        {canManageMembers() ? (
-                          <button
-                            onClick={() => handleChangeMemberRole(
-                              member.user.id,
-                              member.role,
-                              `${member.user.firstName} ${member.user.lastName}`
-                            )}
-                            className="rounded-full bg-gray-100 px-3 py-1 text-sm font-medium text-gray-800 hover:bg-gray-200 transition-colors cursor-pointer"
-                            title="Cliquer pour changer le rôle"
-                          >
-                            {member.role === 'OWNER' && '👑 Propriétaire'}
-                            {member.role === 'MEMBER' && '👤 Membre'}
-                            {member.role === 'VIEWER' && '👁️ Lecteur'}
-                          </button>
-                        ) : (
-                          <span className="rounded-full bg-gray-100 px-3 py-1 text-sm font-medium text-gray-800">
-                            {member.role === 'OWNER' && '👑 Propriétaire'}
-                            {member.role === 'MEMBER' && '👤 Membre'}
-                            {member.role === 'VIEWER' && '👁️ Lecteur'}
-                          </span>
-                        )}
-                        {canManageMembers() && member.role !== 'OWNER' && (
-                          <button
-                            onClick={() => handleRemoveMember(
-                              member.user.id,
-                              `${member.user.firstName} ${member.user.lastName}`
-                            )}
-                            className="text-red-600 hover:text-red-800"
-                            title="Retirer du projet"
-                          >
-                            <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                            </svg>
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Mots de passe */}
-              <div className="rounded-lg bg-white p-6 shadow">
-                <div className="mb-4 flex items-center justify-between">
-                  <h2 className="text-lg font-semibold text-gray-900">Mots de passe</h2>
-                  {canRevealPasswords() && (
-                    <Button size="sm" onClick={openNewCredential}>
-                      Ajouter un mot de passe
-                    </Button>
-                  )}
-                </div>
-
-                {!canRevealPasswords() && (
-                  <div className="mb-4 rounded-lg bg-yellow-50 border border-yellow-200 p-3 text-sm text-yellow-800">
-                    ℹ️ Vous êtes <strong>Lecteur</strong> sur ce projet. Vous ne pouvez pas voir les mots de passe.
-                  </div>
-                )}
-
-                {credentials.length === 0 ? (
-                  <div className="text-center py-8 text-gray-600">
-                    Aucun mot de passe enregistré
-                  </div>
-                ) : (
-                  <div className="space-y-3">
-                    {credentials.map((cred) => (
-                      <div
-                        key={cred.id}
-                        className="rounded-lg border border-gray-200 p-4"
-                      >
-                        <div className="flex items-start justify-between">
-                          <div className="flex-1">
-                            <div className="flex items-center space-x-2 mb-2">
-                              <span className="rounded bg-blue-100 px-2 py-1 text-xs font-medium text-blue-800">
-                                {cred.type === 'FTP' && 'FTP'}
-                                {cred.type === 'DATABASE' && 'Base de données'}
-                                {cred.type === 'ADMIN' && 'Admin'}
-                                {cred.type === 'API' && 'API'}
-                                {cred.type === 'SSH' && 'SSH'}
-                                {cred.type === 'OTHER' && 'Autre'}
-                              </span>
-                              <h3 className="font-medium text-gray-900">{cred.name}</h3>
-                            </div>
-                            
-                            {cred.username && (
-                              <p className="text-sm text-gray-600 mb-1">
-                                <span className="font-medium">Utilisateur :</span> {cred.username}
-                              </p>
-                            )}
-                            
-                            <div className="text-sm text-gray-600 mb-1">
-                              <span className="font-medium">Mot de passe :</span>{' '}
-                              {canRevealPasswords() ? (
-                                revealedPasswords[cred.id] ? (
-                                  <span className="font-mono bg-gray-100 px-2 py-1 rounded">
-                                    {revealedPasswords[cred.id]}
-                                  </span>
-                                ) : (
-                                  <button
-                                    onClick={() => revealPassword(cred.id)}
-                                    className="text-blue-600 hover:underline"
-                                  >
-                                    Cliquer pour révéler
-                                  </button>
-                                )
-                              ) : (
-                                <span className="text-gray-400">••••••••</span>
-                              )}
-                            </div>
-                            
-                            {cred.url && (
-                              <p className="text-sm text-gray-600">
-                                <span className="font-medium">URL :</span>{' '}
-                                <a href={cred.url} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
-                                  {cred.url}
-                                </a>
-                              </p>
-                            )}
-                            
-                            {cred.notes && (
-                              <p className="text-sm text-gray-600 mt-2">
-                                <span className="font-medium">Notes :</span> {cred.notes}
-                              </p>
-                            )}
-                          </div>
-                          
-                          {canRevealPasswords() && (
-                            <div className="flex space-x-2">
-                              <button
-                                onClick={() => openEditCredential(cred)}
-                                className="text-gray-600 hover:text-gray-900"
-                                title="Modifier"
-                              >
-                                <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                                </svg>
-                              </button>
-                              <button
-                                onClick={() => handleDeleteCredential(cred.id)}
-                                className="text-red-600 hover:text-red-800"
-                                title="Supprimer"
-                              >
-                                <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                </svg>
-                              </button>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
             </div>
           </div>
         )}
