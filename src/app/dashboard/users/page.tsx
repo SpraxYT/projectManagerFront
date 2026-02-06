@@ -3,11 +3,15 @@
 import { useEffect, useState } from 'react';
 import { api } from '@/lib/api';
 import { getRoleLabel, getRoleColor, formatRelativeDate } from '@/lib/utils';
+import UserModal from '@/components/modals/UserModal';
+import Button from '@/components/ui/Button';
 
 export default function UsersPage() {
   const [users, setUsers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<any>(null);
 
   useEffect(() => {
     loadUsers();
@@ -31,6 +35,33 @@ export default function UsersPage() {
     }, 300);
     return () => clearTimeout(timer);
   }, [search]);
+
+  const handleEdit = (user: any) => {
+    setSelectedUser(user);
+    setIsModalOpen(true);
+  };
+
+  const handleDelete = async (user: any) => {
+    if (!confirm(`Êtes-vous sûr de vouloir supprimer ${user.firstName} ${user.lastName} ?`)) {
+      return;
+    }
+
+    try {
+      await api.deleteUser(user.id);
+      loadUsers();
+    } catch (error: any) {
+      alert(error.error || 'Erreur lors de la suppression');
+    }
+  };
+
+  const handleModalClose = () => {
+    setIsModalOpen(false);
+    setSelectedUser(null);
+  };
+
+  const handleModalSuccess = () => {
+    loadUsers();
+  };
 
   return (
     <div className="p-8">
@@ -66,10 +97,18 @@ export default function UsersPage() {
             />
           </svg>
         </div>
-        <button className="ml-4 rounded-lg bg-blue-600 px-4 py-2 text-white hover:bg-blue-700 transition-colors">
+        <Button onClick={() => setIsModalOpen(true)}>
           + Ajouter un utilisateur
-        </button>
+        </Button>
       </div>
+
+      {/* User Modal */}
+      <UserModal
+        isOpen={isModalOpen}
+        onClose={handleModalClose}
+        onSuccess={handleModalSuccess}
+        user={selectedUser}
+      />
 
       {/* Users Table */}
       {loading ? (
@@ -140,10 +179,16 @@ export default function UsersPage() {
                       </span>
                     </td>
                     <td className="whitespace-nowrap px-6 py-4 text-right text-sm">
-                      <button className="text-blue-600 hover:text-blue-900 mr-4">
+                      <button
+                        onClick={() => handleEdit(user)}
+                        className="text-blue-600 hover:text-blue-900 mr-4"
+                      >
                         Modifier
                       </button>
-                      <button className="text-red-600 hover:text-red-900">
+                      <button
+                        onClick={() => handleDelete(user)}
+                        className="text-red-600 hover:text-red-900"
+                      >
                         Supprimer
                       </button>
                     </td>

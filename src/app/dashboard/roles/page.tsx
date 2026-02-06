@@ -2,11 +2,15 @@
 
 import { useEffect, useState } from 'react';
 import { api } from '@/lib/api';
+import RoleModal from '@/components/modals/RoleModal';
+import Button from '@/components/ui/Button';
 
 export default function RolesPage() {
   const [roles, setRoles] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedRole, setSelectedRole] = useState<any>(null);
 
   useEffect(() => {
     loadRoles();
@@ -30,6 +34,33 @@ export default function RolesPage() {
     }, 300);
     return () => clearTimeout(timer);
   }, [search]);
+
+  const handleEdit = (role: any) => {
+    setSelectedRole(role);
+    setIsModalOpen(true);
+  };
+
+  const handleDelete = async (role: any) => {
+    if (!confirm(`Êtes-vous sûr de vouloir supprimer le rôle "${role.name}" ?`)) {
+      return;
+    }
+
+    try {
+      await api.deleteRole(role.id);
+      loadRoles();
+    } catch (error: any) {
+      alert(error.error || 'Erreur lors de la suppression');
+    }
+  };
+
+  const handleModalClose = () => {
+    setIsModalOpen(false);
+    setSelectedRole(null);
+  };
+
+  const handleModalSuccess = () => {
+    loadRoles();
+  };
 
   return (
     <div className="p-8">
@@ -65,10 +96,18 @@ export default function RolesPage() {
             />
           </svg>
         </div>
-        <button className="ml-4 rounded-lg bg-blue-600 px-4 py-2 text-white hover:bg-blue-700 transition-colors">
+        <Button onClick={() => setIsModalOpen(true)}>
           + Créer un rôle
-        </button>
+        </Button>
       </div>
+
+      {/* Role Modal */}
+      <RoleModal
+        isOpen={isModalOpen}
+        onClose={handleModalClose}
+        onSuccess={handleModalSuccess}
+        role={selectedRole}
+      />
 
       {/* Roles Grid */}
       {loading ? (
@@ -94,9 +133,9 @@ export default function RolesPage() {
           <p className="mt-2 text-sm text-gray-500">
             Commencez par créer votre premier rôle personnalisé avec des permissions spécifiques
           </p>
-          <button className="mt-6 rounded-lg bg-blue-600 px-4 py-2 text-white hover:bg-blue-700 transition-colors">
+          <Button onClick={() => setIsModalOpen(true)} className="mt-6">
             Créer mon premier rôle
-          </button>
+          </Button>
         </div>
       ) : (
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
@@ -129,12 +168,20 @@ export default function RolesPage() {
                   {role._count?.users || 0} utilisateur{(role._count?.users || 0) !== 1 ? 's' : ''}
                 </span>
                 <div className="flex space-x-2">
-                  <button className="rounded p-2 text-blue-600 hover:bg-blue-50">
+                  <button
+                    onClick={() => handleEdit(role)}
+                    className="rounded p-2 text-blue-600 hover:bg-blue-50"
+                    title="Modifier"
+                  >
                     <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                     </svg>
                   </button>
-                  <button className="rounded p-2 text-red-600 hover:bg-red-50">
+                  <button
+                    onClick={() => handleDelete(role)}
+                    className="rounded p-2 text-red-600 hover:bg-red-50"
+                    title="Supprimer"
+                  >
                     <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                     </svg>
