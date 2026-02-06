@@ -1,9 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuthStore } from '@/store/authStore';
+import { api } from '@/lib/api';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -11,6 +12,21 @@ export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [registrationEnabled, setRegistrationEnabled] = useState(true);
+
+  useEffect(() => {
+    // Charger les settings pour vérifier si l'inscription est activée
+    const loadSettings = async () => {
+      try {
+        const response = await api.get('/settings');
+        setRegistrationEnabled(response.settings?.enableRegistration ?? true);
+      } catch (error) {
+        // En cas d'erreur, utiliser la valeur par défaut
+        setRegistrationEnabled(true);
+      }
+    };
+    loadSettings();
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -92,7 +108,7 @@ export default function LoginPage() {
             </button>
           </div>
 
-          {process.env.NEXT_PUBLIC_ENABLE_REGISTRATION === 'true' && (
+          {registrationEnabled && (
             <div className="text-center text-sm">
               <span className="text-gray-600">Pas encore de compte ? </span>
               <Link

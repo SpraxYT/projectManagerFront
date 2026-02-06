@@ -1,9 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuthStore } from '@/store/authStore';
+import { api } from '@/lib/api';
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -15,6 +16,30 @@ export default function RegisterPage() {
     lastName: '',
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [registrationEnabled, setRegistrationEnabled] = useState(true);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    // Vérifier si l'inscription est activée
+    const checkRegistration = async () => {
+      try {
+        const response = await api.get('/settings');
+        const enabled = response.settings?.enableRegistration ?? true;
+        setRegistrationEnabled(enabled);
+        
+        if (!enabled) {
+          // Rediriger vers login si inscription désactivée
+          router.push('/login');
+        }
+      } catch (error) {
+        // En cas d'erreur, permettre l'inscription
+        setRegistrationEnabled(true);
+      } finally {
+        setLoading(false);
+      }
+    };
+    checkRegistration();
+  }, [router]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({
@@ -38,9 +63,20 @@ export default function RegisterPage() {
     }
   };
 
-  // Vérifier si l'inscription est activée
-  if (process.env.NEXT_PUBLIC_ENABLE_REGISTRATION !== 'true') {
-    router.replace('/login');
+  // Afficher un loader pendant la vérification
+  if (loading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <div className="mb-4 h-12 w-12 animate-spin rounded-full border-b-2 border-blue-600 mx-auto"></div>
+          <p className="text-gray-600">Vérification...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Redirection en cours si inscription désactivée
+  if (!registrationEnabled) {
     return null;
   }
 
