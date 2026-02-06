@@ -164,8 +164,11 @@ export default function RegisterPage() {
                 value={formData.password}
                 onChange={handleChange}
                 className="relative block w-full rounded-md border-0 px-3 py-2 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:z-10 focus:ring-2 focus:ring-inset focus:ring-blue-600 sm:text-sm sm:leading-6"
-                placeholder="Mot de passe (min. 8 caractères, 1 majuscule, 1 chiffre)"
+                placeholder="Mot de passe"
               />
+              <p className="mt-1 text-xs text-gray-500">
+                Minimum 8 caractères, incluant au moins : 1 majuscule, 1 minuscule et 1 chiffre
+              </p>
             </div>
           </div>
 
