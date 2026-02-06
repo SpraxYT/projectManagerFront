@@ -1,15 +1,53 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import { useAuthStore } from '@/store/authStore';
+import { api } from '@/lib/api';
 import Link from 'next/link';
 
 export default function DashboardPage() {
   const { user } = useAuthStore();
+  const [loading, setLoading] = useState(true);
+  const [statsData, setStatsData] = useState({
+    users: 0,
+    roles: 0,
+    projects: 0,
+    tasks: 0,
+  });
+
+  useEffect(() => {
+    const loadStats = async () => {
+      try {
+        setLoading(true);
+        
+        // Charger les utilisateurs
+        const usersResponse = await api.getUsers();
+        const usersCount = usersResponse.pagination?.total || usersResponse.users?.length || 0;
+        
+        // Charger les rôles
+        const rolesResponse = await api.getRoles();
+        const rolesCount = rolesResponse.pagination?.total || rolesResponse.roles?.length || 0;
+        
+        setStatsData({
+          users: usersCount,
+          roles: rolesCount,
+          projects: 0, // Phase 2
+          tasks: 0,    // Phase 2
+        });
+      } catch (error) {
+        console.error('Erreur lors du chargement des stats:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadStats();
+  }, []);
 
   const stats = [
     {
       name: 'Utilisateurs',
-      value: '0',
+      value: loading ? '...' : statsData.users.toString(),
       icon: (
         <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
@@ -20,7 +58,7 @@ export default function DashboardPage() {
     },
     {
       name: 'Rôles personnalisés',
-      value: '0',
+      value: loading ? '...' : statsData.roles.toString(),
       icon: (
         <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
