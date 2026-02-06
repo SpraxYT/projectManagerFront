@@ -16,6 +16,7 @@ import { SortableContext, arrayMove, verticalListSortingStrategy } from '@dnd-ki
 import KanbanColumn from './KanbanColumn';
 import TaskCard from './TaskCard';
 import TaskModal from '../modals/TaskModal';
+import TemplateModal from '../modals/TemplateModal';
 import { api } from '@/lib/api';
 
 interface Task {
@@ -71,6 +72,7 @@ export default function KanbanBoard({ projectId, canEdit }: KanbanBoardProps) {
   const [activeTask, setActiveTask] = useState<Task | null>(null);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
+  const [isTemplateModalOpen, setIsTemplateModalOpen] = useState(false);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -223,6 +225,11 @@ export default function KanbanBoard({ projectId, canEdit }: KanbanBoardProps) {
     setSelectedTask(null);
   };
 
+  const handleTemplateApplied = () => {
+    loadBoard();
+    setIsTemplateModalOpen(false);
+  };
+
   if (loading) {
     return (
       <div className="flex h-96 items-center justify-center">
@@ -232,7 +239,20 @@ export default function KanbanBoard({ projectId, canEdit }: KanbanBoardProps) {
   }
 
   return (
-    <div className="relative h-full">
+    <div className="relative h-full flex flex-col">
+      {/* Header avec bouton Templates */}
+      {canEdit && (
+        <div className="mb-4 flex justify-end">
+          <button
+            onClick={() => setIsTemplateModalOpen(true)}
+            className="flex items-center gap-2 rounded-lg bg-white border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors shadow-sm"
+          >
+            <span>📋</span>
+            <span>Appliquer un template</span>
+          </button>
+        </div>
+      )}
+
       <DndContext
         sensors={sensors}
         collisionDetection={closestCorners}
@@ -240,7 +260,7 @@ export default function KanbanBoard({ projectId, canEdit }: KanbanBoardProps) {
         onDragOver={handleDragOver}
         onDragEnd={handleDragEnd}
       >
-        <div className="flex h-full gap-4 overflow-x-auto pb-4 px-1">
+        <div className="flex flex-1 gap-4 overflow-x-auto pb-4 px-1">
           {columns.map((column) => (
             <KanbanColumn
               key={column.id}
@@ -279,6 +299,15 @@ export default function KanbanBoard({ projectId, canEdit }: KanbanBoardProps) {
           task={selectedTask}
           projectId={projectId}
           canEdit={canEdit}
+        />
+      )}
+
+      {isTemplateModalOpen && (
+        <TemplateModal
+          isOpen={isTemplateModalOpen}
+          onClose={() => setIsTemplateModalOpen(false)}
+          onApply={handleTemplateApplied}
+          projectId={projectId}
         />
       )}
     </div>

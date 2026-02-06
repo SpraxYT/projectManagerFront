@@ -429,6 +429,19 @@ class ApiClient {
   async deleteComment(commentId: string) {
     return this.delete<any>(`/comments/${commentId}`);
   }
+
+  // Templates
+  async getTemplates() {
+    return this.get<any>('/templates');
+  }
+
+  async getTemplateById(templateId: string) {
+    return this.get<any>(`/templates/${templateId}`);
+  }
+
+  async applyTemplate(projectId: string, templateId: string) {
+    return this.post<any>(`/projects/${projectId}/apply-template`, { templateId });
+  }
 }
 
 export const api = new ApiClient(API_URL);
