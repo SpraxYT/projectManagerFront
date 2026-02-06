@@ -1,163 +1,159 @@
 'use client';
 
-import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/authStore';
-import { getRoleLabel } from '@/lib/utils';
+import Link from 'next/link';
 
 export default function DashboardPage() {
-  const router = useRouter();
-  const { user, isAuthenticated, isLoading, logout } = useAuthStore();
+  const { user } = useAuthStore();
 
-  useEffect(() => {
-    if (!isLoading && !isAuthenticated) {
-      router.replace('/login');
-    }
-  }, [isAuthenticated, isLoading, router]);
-
-  const handleLogout = async () => {
-    await logout();
-    router.push('/login');
-  };
-
-  if (isLoading || !user) {
-    return (
-      <div className="flex min-h-screen items-center justify-center">
-        <div className="text-center">
-          <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-current border-r-transparent"></div>
-          <p className="mt-4 text-sm text-gray-600">Chargement...</p>
-        </div>
-      </div>
-    );
-  }
+  const stats = [
+    {
+      name: 'Utilisateurs',
+      value: '0',
+      icon: (
+        <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+        </svg>
+      ),
+      color: 'bg-blue-500',
+      href: '/dashboard/users',
+    },
+    {
+      name: 'Rôles personnalisés',
+      value: '0',
+      icon: (
+        <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+        </svg>
+      ),
+      color: 'bg-green-500',
+      href: '/dashboard/roles',
+    },
+    {
+      name: 'Projets',
+      value: '0',
+      icon: (
+        <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+        </svg>
+      ),
+      color: 'bg-purple-500',
+      href: '#',
+      disabled: true,
+    },
+    {
+      name: 'Tâches',
+      value: '0',
+      icon: (
+        <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+        </svg>
+      ),
+      color: 'bg-orange-500',
+      href: '#',
+      disabled: true,
+    },
+  ];
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="p-8">
       {/* Header */}
-      <header className="bg-white shadow">
-        <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between">
-            <h1 className="text-3xl font-bold tracking-tight text-gray-900">
-              {process.env.NEXT_PUBLIC_INSTANCE_NAME || 'ProjectManager'}
-            </h1>
-            <button
-              onClick={handleLogout}
-              className="rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-500"
-            >
-              Déconnexion
-            </button>
-          </div>
-        </div>
-      </header>
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold text-gray-900">
+          Bienvenue, {user?.firstName} !
+        </h1>
+        <p className="mt-2 text-gray-600">
+          Voici un aperçu de votre espace de travail
+        </p>
+      </div>
 
-      {/* Main Content */}
-      <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-        <div className="mb-8 rounded-lg bg-white p-6 shadow">
-          <h2 className="text-2xl font-bold text-gray-900">
-            Bienvenue, {user.firstName} {user.lastName} !
-          </h2>
-          <p className="mt-2 text-gray-600">
-            Rôle : <span className="font-medium">{getRoleLabel(user.role)}</span>
-          </p>
-          <p className="mt-1 text-sm text-gray-500">Email : {user.email}</p>
-        </div>
-
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {/* Card Utilisateurs */}
-          <div className="rounded-lg bg-white p-6 shadow hover:shadow-lg transition-shadow">
+      {/* Stats Grid */}
+      <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+        {stats.map((stat) => (
+          <Link
+            key={stat.name}
+            href={stat.disabled ? '#' : stat.href}
+            className={`
+              relative overflow-hidden rounded-lg bg-white p-6 shadow transition-shadow hover:shadow-lg
+              ${stat.disabled ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'}
+            `}
+            onClick={(e) => {
+              if (stat.disabled) {
+                e.preventDefault();
+              }
+            }}
+          >
             <div className="flex items-center justify-between">
-              <h3 className="text-lg font-semibold text-gray-900">Utilisateurs</h3>
-              <svg
-                className="h-8 w-8 text-blue-600"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"
-                />
+              <div className="flex-1">
+                <p className="text-sm font-medium text-gray-600">{stat.name}</p>
+                <p className="mt-2 text-3xl font-bold text-gray-900">{stat.value}</p>
+              </div>
+              <div className={`${stat.color} rounded-lg p-3 text-white`}>
+                {stat.icon}
+              </div>
+            </div>
+            {stat.disabled && (
+              <div className="absolute top-2 right-2">
+                <span className="rounded bg-gray-100 px-2 py-1 text-xs font-medium text-gray-600">
+                  Bientôt
+                </span>
+              </div>
+            )}
+          </Link>
+        ))}
+      </div>
+
+      {/* Quick Actions */}
+      <div className="mt-8">
+        <h2 className="text-lg font-semibold text-gray-900 mb-4">Actions rapides</h2>
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <Link
+            href="/dashboard/users"
+            className="flex items-center space-x-4 rounded-lg bg-white p-4 shadow transition-shadow hover:shadow-lg"
+          >
+            <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-blue-100">
+              <svg className="h-6 w-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
               </svg>
             </div>
-            <p className="mt-2 text-sm text-gray-600">
-              Gérer les utilisateurs de l'application
-            </p>
-            <button className="mt-4 text-sm font-medium text-blue-600 hover:text-blue-500">
-              Voir les utilisateurs →
-            </button>
-          </div>
+            <div>
+              <p className="font-medium text-gray-900">Ajouter un utilisateur</p>
+              <p className="text-sm text-gray-600">Inviter un membre</p>
+            </div>
+          </Link>
 
-          {/* Card Rôles */}
-          <div className="rounded-lg bg-white p-6 shadow hover:shadow-lg transition-shadow">
-            <div className="flex items-center justify-between">
-              <h3 className="text-lg font-semibold text-gray-900">Rôles</h3>
-              <svg
-                className="h-8 w-8 text-green-600"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"
-                />
+          <Link
+            href="/dashboard/roles"
+            className="flex items-center space-x-4 rounded-lg bg-white p-4 shadow transition-shadow hover:shadow-lg"
+          >
+            <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-green-100">
+              <svg className="h-6 w-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
               </svg>
             </div>
-            <p className="mt-2 text-sm text-gray-600">
-              Gérer les rôles et permissions personnalisés
-            </p>
-            <button className="mt-4 text-sm font-medium text-green-600 hover:text-green-500">
-              Voir les rôles →
-            </button>
-          </div>
+            <div>
+              <p className="font-medium text-gray-900">Créer un rôle</p>
+              <p className="text-sm text-gray-600">Gérer les permissions</p>
+            </div>
+          </Link>
 
-          {/* Card Projets (Phase 2) */}
-          <div className="rounded-lg bg-white p-6 shadow opacity-50">
-            <div className="flex items-center justify-between">
-              <h3 className="text-lg font-semibold text-gray-900">Projets</h3>
-              <svg
-                className="h-8 w-8 text-purple-600"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"
-                />
+          <Link
+            href="/dashboard/settings"
+            className="flex items-center space-x-4 rounded-lg bg-white p-4 shadow transition-shadow hover:shadow-lg"
+          >
+            <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-gray-100">
+              <svg className="h-6 w-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
               </svg>
             </div>
-            <p className="mt-2 text-sm text-gray-600">
-              Disponible dans la Phase 2
-            </p>
-            <span className="mt-4 inline-block text-sm font-medium text-gray-400">
-              Bientôt disponible
-            </span>
-          </div>
+            <div>
+              <p className="font-medium text-gray-900">Paramètres</p>
+              <p className="text-sm text-gray-600">Configurer l'instance</p>
+            </div>
+          </Link>
         </div>
-
-        {/* Phase Status */}
-        <div className="mt-8 rounded-lg bg-blue-50 p-6">
-          <h3 className="text-lg font-semibold text-blue-900">
-            Phase 1 : Authentication & Roles ✓
-          </h3>
-          <p className="mt-2 text-sm text-blue-700">
-            Système d'authentification et gestion des rôles actifs
-          </p>
-          <div className="mt-4 space-y-2 text-sm text-blue-600">
-            <p>✓ Inscription / Connexion</p>
-            <p>✓ Gestion des utilisateurs</p>
-            <p>✓ Rôles personnalisés avec permissions</p>
-            <p>✓ Logs d'activité</p>
-          </div>
-        </div>
-      </main>
+      </div>
     </div>
   );
 }

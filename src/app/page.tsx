@@ -1,22 +1,33 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/authStore';
 
 export default function HomePage() {
   const router = useRouter();
-  const { isAuthenticated, isLoading } = useAuthStore();
+  const { isAuthenticated, isLoading, loadUser } = useAuthStore();
+  const [initialized, setInitialized] = useState(false);
 
   useEffect(() => {
-    if (!isLoading) {
+    // Charger l'utilisateur une seule fois au démarrage
+    if (!initialized) {
+      loadUser().finally(() => {
+        setInitialized(true);
+      });
+    }
+  }, [initialized, loadUser]);
+
+  useEffect(() => {
+    // Rediriger une fois l'utilisateur chargé
+    if (initialized && !isLoading) {
       if (isAuthenticated) {
         router.replace('/dashboard');
       } else {
         router.replace('/login');
       }
     }
-  }, [isAuthenticated, isLoading, router]);
+  }, [isAuthenticated, isLoading, initialized, router]);
 
   return (
     <div className="flex min-h-screen items-center justify-center">
