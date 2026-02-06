@@ -28,11 +28,15 @@ export default function DashboardPage() {
         const rolesResponse = await api.getRoles();
         const rolesCount = rolesResponse.pagination?.total || rolesResponse.roles?.length || 0;
         
+        // Charger les projets
+        const projectsResponse = await api.getProjects();
+        const projectsCount = projectsResponse.pagination?.total || projectsResponse.projects?.length || 0;
+        
         setStatsData({
           users: usersCount,
           roles: rolesCount,
-          projects: 0, // Phase 2
-          tasks: 0,    // Phase 2
+          projects: projectsCount,
+          tasks: 0,    // Phase 3
         });
       } catch (error) {
         console.error('Erreur lors du chargement des stats:', error);
@@ -69,15 +73,14 @@ export default function DashboardPage() {
     },
     {
       name: 'Projets',
-      value: '0',
+      value: loading ? '...' : statsData.projects.toString(),
       icon: (
         <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
         </svg>
       ),
       color: 'bg-purple-500',
-      href: '#',
-      disabled: true,
+      href: '/dashboard/projects',
     },
     {
       name: 'Tâches',

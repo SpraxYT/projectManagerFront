@@ -244,6 +244,69 @@ class ApiClient {
   async updateSettings(data: any) {
     return this.put<any>('/settings', data);
   }
+
+  // ============================================================================
+  // PROJECT ENDPOINTS
+  // ============================================================================
+
+  async getProjects(params?: { page?: number; limit?: number; search?: string; status?: string }) {
+    const query = new URLSearchParams(params as any).toString();
+    return this.get<any>(`/projects?${query}`);
+  }
+
+  async getProjectById(id: string) {
+    return this.get<any>(`/projects/${id}`);
+  }
+
+  async createProject(data: any) {
+    return this.post<any>('/projects', data);
+  }
+
+  async updateProject(id: string, data: any) {
+    return this.put<any>(`/projects/${id}`, data);
+  }
+
+  async deleteProject(id: string) {
+    return this.delete<any>(`/projects/${id}`);
+  }
+
+  // Project Members
+  async getProjectMembers(projectId: string) {
+    return this.get<any>(`/projects/${projectId}/members`);
+  }
+
+  async addProjectMember(projectId: string, data: { userId: string; role?: string }) {
+    return this.post<any>(`/projects/${projectId}/members`, data);
+  }
+
+  async updateProjectMemberRole(projectId: string, userId: string, role: string) {
+    return this.put<any>(`/projects/${projectId}/members/${userId}`, { role });
+  }
+
+  async removeProjectMember(projectId: string, userId: string) {
+    return this.delete<any>(`/projects/${projectId}/members/${userId}`);
+  }
+
+  // Project Credentials
+  async getProjectCredentials(projectId: string) {
+    return this.get<any>(`/projects/${projectId}/credentials`);
+  }
+
+  async createProjectCredential(projectId: string, data: any) {
+    return this.post<any>(`/projects/${projectId}/credentials`, data);
+  }
+
+  async revealCredentialPassword(projectId: string, credentialId: string) {
+    return this.get<any>(`/projects/${projectId}/credentials/${credentialId}/reveal`);
+  }
+
+  async updateProjectCredential(projectId: string, credentialId: string, data: any) {
+    return this.put<any>(`/projects/${projectId}/credentials/${credentialId}`, data);
+  }
+
+  async deleteProjectCredential(projectId: string, credentialId: string) {
+    return this.delete<any>(`/projects/${projectId}/credentials/${credentialId}`);
+  }
 }
 
 export const api = new ApiClient(API_URL);
