@@ -232,7 +232,7 @@ export default function KanbanBoard({ projectId, canEdit }: KanbanBoardProps) {
   }
 
   return (
-    <div className="h-full">
+    <div className="relative h-full">
       <DndContext
         sensors={sensors}
         collisionDetection={closestCorners}
@@ -240,15 +240,13 @@ export default function KanbanBoard({ projectId, canEdit }: KanbanBoardProps) {
         onDragOver={handleDragOver}
         onDragEnd={handleDragEnd}
       >
-        <div className="flex h-full gap-4 overflow-x-auto pb-4">
+        <div className="flex h-full gap-4 overflow-x-auto pb-4 px-1">
           {columns.map((column) => (
             <KanbanColumn
               key={column.id}
               column={column}
               tasks={column.tasks}
               onTaskClick={handleTaskClick}
-              onCreateTask={() => handleCreateTask(column.id)}
-              canEdit={canEdit}
             />
           ))}
         </div>
@@ -259,6 +257,19 @@ export default function KanbanBoard({ projectId, canEdit }: KanbanBoardProps) {
           ) : null}
         </DragOverlay>
       </DndContext>
+
+      {/* Floating Action Button */}
+      {canEdit && columns.length > 0 && (
+        <button
+          onClick={() => handleCreateTask(columns[0].id)}
+          className="fixed bottom-8 right-8 flex h-14 w-14 items-center justify-center rounded-full bg-blue-600 text-white shadow-lg hover:bg-blue-700 hover:shadow-xl transition-all duration-200 z-50"
+          title="Ajouter une tâche"
+        >
+          <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+          </svg>
+        </button>
+      )}
 
       {isTaskModalOpen && (
         <TaskModal
