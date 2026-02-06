@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { api } from '@/lib/api';
+import { useAuthStore } from '@/store/authStore';
 import Button from '@/components/ui/Button';
 import Link from 'next/link';
 import ProjectModal from '@/components/modals/ProjectModal';
@@ -57,6 +58,7 @@ export default function ProjectDetailPage() {
   const params = useParams();
   const router = useRouter();
   const projectId = params.id as string;
+  const { user } = useAuthStore();
 
   const [project, setProject] = useState<Project | null>(null);
   const [credentials, setCredentials] = useState<Credential[]>([]);
@@ -113,6 +115,24 @@ export default function ProjectDetailPage() {
     }
   };
 
+  const getUserRole = (): string => {
+    if (!project || !user) return 'VIEWER';
+    const member = project.members.find((m) => m.user.id === user.id);
+    return member?.role || 'VIEWER';
+  };
+
+  const canRevealPasswords = (): boolean => {
+    if (user?.role === 'OWNER' || user?.role === 'ADMIN') return true;
+    const projectRole = getUserRole();
+    return projectRole === 'OWNER' || projectRole === 'MEMBER';
+  };
+
+  const canManageMembers = (): boolean => {
+    if (user?.role === 'OWNER' || user?.role === 'ADMIN') return true;
+    const projectRole = getUserRole();
+    return projectRole === 'OWNER';
+  };
+
   const handleEditProject = async (data: any) => {
     try {
       await api.updateProject(projectId, data);
@@ -150,8 +170,16 @@ export default function ProjectDetailPage() {
     }
   };
 
-  const handleRemoveMember = async (userId: string) => {
-    const confirmed = window.confirm('Êtes-vous sûr de vouloir retirer ce membre ?');
+  const handleRemoveMember = async (userId: string, userName: string) => {
+    const confirmed = window.confirm(
+      `⚠️ ATTENTION : Cette action retirera l'accès au projet !\n\n` +
+      `Êtes-vous sûr de vouloir retirer ${userName} de ce projet ?\n\n` +
+      `Cet utilisateur perdra :\n` +
+      `- L'accès au projet et ses informations\n` +
+      `- L'accès aux mots de passe\n` +
+      `- L'accès aux tâches du projet`
+    );
+    
     if (!confirmed) return;
 
     try {
@@ -159,6 +187,33 @@ export default function ProjectDetailPage() {
       await loadProject();
     } catch (error: any) {
       alert(error.error || 'Erreur lors de la suppression du membre');
+    }
+  };
+
+  const handleChangeMemberRole = async (userId: string, currentRole: string, userName: string) => {
+    const newRole = window.prompt(
+      `Changer le rôle de ${userName}\n\n` +
+      `Rôle actuel : ${currentRole}\n\n` +
+      `Entrez le nouveau rôle (tapez exactement) :\n` +
+      `- OWNER (Propriétaire - contrôle total)\n` +
+      `- MEMBER (Membre - peut modifier et révéler mots de passe)\n` +
+      `- VIEWER (Lecteur - lecture seule, ne peut pas révéler mots de passe)`,
+      currentRole
+    );
+
+    if (!newRole || newRole === currentRole) return;
+
+    const validRoles = ['OWNER', 'MEMBER', 'VIEWER'];
+    if (!validRoles.includes(newRole.toUpperCase())) {
+      alert('Rôle invalide. Utilisez : OWNER, MEMBER ou VIEWER');
+      return;
+    }
+
+    try {
+      await api.updateProjectMemberRole(projectId, userId, newRole.toUpperCase());
+      await loadProject();
+    } catch (error: any) {
+      alert(error.error || 'Erreur lors de la modification du rôle');
     }
   };
 
@@ -252,12 +307,16 @@ export default function ProjectDetailPage() {
             )}
           </div>
           <div className="flex space-x-2">
-            <Button variant="secondary" size="sm" onClick={() => setShowEditModal(true)}>
-              Éditer
-            </Button>
-            <Button variant="danger" size="sm" onClick={deleteProject}>
-              Supprimer
-            </Button>
+            {canManageMembers() && (
+              <>
+                <Button variant="secondary" size="sm" onClick={() => setShowEditModal(true)}>
+                  Éditer
+                </Button>
+                <Button variant="danger" size="sm" onClick={deleteProject}>
+                  Supprimer
+                </Button>
+              </>
+            )}
           </div>
         </div>
       </div>
@@ -382,9 +441,11 @@ export default function ProjectDetailPage() {
           <div className="rounded-lg bg-white p-6 shadow">
             <div className="mb-4 flex items-center justify-between">
               <h2 className="text-lg font-semibold text-gray-900">Membres du projet</h2>
-              <Button size="sm" onClick={() => setShowAddMemberModal(true)}>
-                Ajouter un membre
-              </Button>
+              {canManageMembers() && (
+                <Button size="sm" onClick={() => setShowAddMemberModal(true)}>
+                  Ajouter un membre
+                </Button>
+              )}
             </div>
 
             <div className="space-y-2">
@@ -404,13 +465,34 @@ export default function ProjectDetailPage() {
                       <p className="text-sm text-gray-600">{member.user.email}</p>
                     </div>
                   </div>
-                  <div className="flex items-center space-x-3">
-                    <span className="rounded-full bg-gray-100 px-3 py-1 text-sm font-medium text-gray-800">
-                      {member.role}
-                    </span>
-                    {member.role !== 'OWNER' && (
+                  <div className="flex items-center space-x-2">
+                    {canManageMembers() ? (
                       <button
-                        onClick={() => handleRemoveMember(member.user.id)}
+                        onClick={() => handleChangeMemberRole(
+                          member.user.id,
+                          member.role,
+                          `${member.user.firstName} ${member.user.lastName}`
+                        )}
+                        className="rounded-full bg-gray-100 px-3 py-1 text-sm font-medium text-gray-800 hover:bg-gray-200 transition-colors cursor-pointer"
+                        title="Cliquer pour changer le rôle"
+                      >
+                        {member.role === 'OWNER' && '👑 Propriétaire'}
+                        {member.role === 'MEMBER' && '👤 Membre'}
+                        {member.role === 'VIEWER' && '👁️ Lecteur'}
+                      </button>
+                    ) : (
+                      <span className="rounded-full bg-gray-100 px-3 py-1 text-sm font-medium text-gray-800">
+                        {member.role === 'OWNER' && '👑 Propriétaire'}
+                        {member.role === 'MEMBER' && '👤 Membre'}
+                        {member.role === 'VIEWER' && '👁️ Lecteur'}
+                      </span>
+                    )}
+                    {canManageMembers() && member.role !== 'OWNER' && (
+                      <button
+                        onClick={() => handleRemoveMember(
+                          member.user.id,
+                          `${member.user.firstName} ${member.user.lastName}`
+                        )}
                         className="text-red-600 hover:text-red-800"
                         title="Retirer du projet"
                       >
@@ -430,10 +512,18 @@ export default function ProjectDetailPage() {
           <div className="rounded-lg bg-white p-6 shadow">
             <div className="mb-4 flex items-center justify-between">
               <h2 className="text-lg font-semibold text-gray-900">Mots de passe</h2>
-              <Button size="sm" onClick={openNewCredential}>
-                Ajouter un mot de passe
-              </Button>
+              {canRevealPasswords() && (
+                <Button size="sm" onClick={openNewCredential}>
+                  Ajouter un mot de passe
+                </Button>
+              )}
             </div>
+
+            {!canRevealPasswords() && (
+              <div className="mb-4 rounded-lg bg-yellow-50 border border-yellow-200 p-3 text-sm text-yellow-800">
+                ℹ️ Vous êtes <strong>Lecteur</strong> sur ce projet. Vous ne pouvez pas voir les mots de passe.
+              </div>
+            )}
 
             {credentials.length === 0 ? (
               <div className="text-center py-8 text-gray-600">
@@ -468,17 +558,21 @@ export default function ProjectDetailPage() {
                         
                         <div className="text-sm text-gray-600 mb-1">
                           <span className="font-medium">Mot de passe :</span>{' '}
-                          {revealedPasswords[cred.id] ? (
-                            <span className="font-mono bg-gray-100 px-2 py-1 rounded">
-                              {revealedPasswords[cred.id]}
-                            </span>
+                          {canRevealPasswords() ? (
+                            revealedPasswords[cred.id] ? (
+                              <span className="font-mono bg-gray-100 px-2 py-1 rounded">
+                                {revealedPasswords[cred.id]}
+                              </span>
+                            ) : (
+                              <button
+                                onClick={() => revealPassword(cred.id)}
+                                className="text-blue-600 hover:underline"
+                              >
+                                Cliquer pour révéler
+                              </button>
+                            )
                           ) : (
-                            <button
-                              onClick={() => revealPassword(cred.id)}
-                              className="text-blue-600 hover:underline"
-                            >
-                              Cliquer pour révéler
-                            </button>
+                            <span className="text-gray-400">••••••••</span>
                           )}
                         </div>
                         
@@ -498,26 +592,28 @@ export default function ProjectDetailPage() {
                         )}
                       </div>
                       
-                      <div className="flex space-x-2">
-                        <button
-                          onClick={() => openEditCredential(cred)}
-                          className="text-gray-600 hover:text-gray-900"
-                          title="Modifier"
-                        >
-                          <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                          </svg>
-                        </button>
-                        <button
-                          onClick={() => handleDeleteCredential(cred.id)}
-                          className="text-red-600 hover:text-red-800"
-                          title="Supprimer"
-                        >
-                          <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                          </svg>
-                        </button>
-                      </div>
+                      {canRevealPasswords() && (
+                        <div className="flex space-x-2">
+                          <button
+                            onClick={() => openEditCredential(cred)}
+                            className="text-gray-600 hover:text-gray-900"
+                            title="Modifier"
+                          >
+                            <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                            </svg>
+                          </button>
+                          <button
+                            onClick={() => handleDeleteCredential(cred.id)}
+                            className="text-red-600 hover:text-red-800"
+                            title="Supprimer"
+                          >
+                            <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                          </button>
+                        </div>
+                      )}
                     </div>
                   </div>
                 ))}
