@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { api } from '@/lib/api';
 import { getRoleLabel, getRoleColor, formatRelativeDate } from '@/lib/utils';
 import UserModal from '@/components/modals/UserModal';
+import ConfirmModal from '@/components/ui/ConfirmModal';
 import Button from '@/components/ui/Button';
 
 export default function UsersPage() {
@@ -12,6 +13,8 @@ export default function UsersPage() {
   const [search, setSearch] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<any>(null);
+  const [isConfirmDeleteOpen, setIsConfirmDeleteOpen] = useState(false);
+  const [userToDelete, setUserToDelete] = useState<any>(null);
 
   useEffect(() => {
     loadUsers();
@@ -41,23 +44,16 @@ export default function UsersPage() {
     setIsModalOpen(true);
   };
 
-  const handleDelete = async (user: any) => {
-    const confirmed = window.confirm(
-      `⚠️ ATTENTION : Cette action est irréversible !\n\n` +
-      `Êtes-vous sûr de vouloir supprimer l'utilisateur :\n` +
-      `${user.firstName} ${user.lastName} (${user.email}) ?\n\n` +
-      `Toutes les données associées seront définitivement supprimées :\n` +
-      `- Logs d'activité\n` +
-      `- Appartenance aux projets\n` +
-      `- Tokens de session`
-    );
-    
-    if (!confirmed) {
-      return;
-    }
+  const handleDelete = (user: any) => {
+    setUserToDelete(user);
+    setIsConfirmDeleteOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!userToDelete) return;
 
     try {
-      await api.deleteUser(user.id);
+      await api.deleteUser(userToDelete.id);
       loadUsers();
     } catch (error: any) {
       alert(error.error || 'Erreur lors de la suppression');
@@ -118,6 +114,23 @@ export default function UsersPage() {
         onClose={handleModalClose}
         onSuccess={handleModalSuccess}
         user={selectedUser}
+      />
+
+      {/* Delete Confirmation Modal */}
+      <ConfirmModal
+        isOpen={isConfirmDeleteOpen}
+        onClose={() => setIsConfirmDeleteOpen(false)}
+        onConfirm={confirmDelete}
+        title="Supprimer l'utilisateur"
+        message={userToDelete ? `Êtes-vous sûr de vouloir supprimer l'utilisateur ${userToDelete.firstName} ${userToDelete.lastName} (${userToDelete.email}) ?` : ''}
+        details={[
+          'Logs d\'activité',
+          'Appartenance aux projets',
+          'Tokens de session'
+        ]}
+        confirmText="Supprimer"
+        cancelText="Annuler"
+        variant="danger"
       />
 
       {/* Users Table */}

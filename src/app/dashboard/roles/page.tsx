@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { api } from '@/lib/api';
 import RoleModal from '@/components/modals/RoleModal';
+import ConfirmModal from '@/components/ui/ConfirmModal';
 import Button from '@/components/ui/Button';
 
 export default function RolesPage() {
@@ -11,6 +12,8 @@ export default function RolesPage() {
   const [search, setSearch] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedRole, setSelectedRole] = useState<any>(null);
+  const [isConfirmDeleteOpen, setIsConfirmDeleteOpen] = useState(false);
+  const [roleToDelete, setRoleToDelete] = useState<any>(null);
 
   useEffect(() => {
     loadRoles();
@@ -40,27 +43,16 @@ export default function RolesPage() {
     setIsModalOpen(true);
   };
 
-  const handleDelete = async (role: any) => {
-    const userCount = role._count?.users || 0;
-    
-    let message = `⚠️ ATTENTION : Cette action est irréversible !\n\n` +
-      `Êtes-vous sûr de vouloir supprimer le rôle "${role.name}" ?\n\n`;
-    
-    if (userCount > 0) {
-      message += `⚠️ ATTENTION : ${userCount} utilisateur${userCount > 1 ? 's' : ''} ${userCount > 1 ? 'sont' : 'est'} actuellement assigné${userCount > 1 ? 's' : ''} à ce rôle !\n` +
-        `${userCount > 1 ? 'Ils' : 'Il'} ${userCount > 1 ? 'perdront' : 'perdra'} leurs permissions personnalisées.\n\n`;
-    }
-    
-    message += `Cette action supprimera définitivement le rôle et toutes ses permissions.`;
-    
-    const confirmed = window.confirm(message);
-    
-    if (!confirmed) {
-      return;
-    }
+  const handleDelete = (role: any) => {
+    setRoleToDelete(role);
+    setIsConfirmDeleteOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!roleToDelete) return;
 
     try {
-      await api.deleteRole(role.id);
+      await api.deleteRole(roleToDelete.id);
       loadRoles();
     } catch (error: any) {
       alert(error.error || 'Erreur lors de la suppression');
@@ -121,6 +113,30 @@ export default function RolesPage() {
         onClose={handleModalClose}
         onSuccess={handleModalSuccess}
         role={selectedRole}
+      />
+
+      {/* Delete Confirmation Modal */}
+      <ConfirmModal
+        isOpen={isConfirmDeleteOpen}
+        onClose={() => setIsConfirmDeleteOpen(false)}
+        onConfirm={confirmDelete}
+        title="Supprimer le rôle"
+        message={roleToDelete ? `Êtes-vous sûr de vouloir supprimer le rôle "${roleToDelete.name}" ?` : ''}
+        details={
+          roleToDelete
+            ? [
+                ...(roleToDelete._count?.users > 0
+                  ? [
+                      `⚠️ ${roleToDelete._count.users} utilisateur${roleToDelete._count.users > 1 ? 's' : ''} ${roleToDelete._count.users > 1 ? 'perdront' : 'perdra'} leurs permissions personnalisées`,
+                    ]
+                  : []),
+                'Le rôle et toutes ses permissions seront supprimés',
+              ]
+            : []
+        }
+        confirmText="Supprimer"
+        cancelText="Annuler"
+        variant="danger"
       />
 
       {/* Roles Grid */}

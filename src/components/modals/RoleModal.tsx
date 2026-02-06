@@ -19,15 +19,31 @@ export default function RoleModal({ isOpen, onClose, onSuccess, role }: RoleModa
     description: '',
     color: '#3B82F6',
     permissions: {
+      // Users
       canViewUsers: false,
       canCreateUsers: false,
       canEditUsers: false,
       canDeleteUsers: false,
+      // Roles
       canViewRoles: false,
       canCreateRoles: false,
       canEditRoles: false,
       canDeleteRoles: false,
+      // Logs
       canViewLogs: false,
+      // Projects
+      canViewAllProjects: false,
+      canCreateProjects: false,
+      canEditProjects: false,
+      canDeleteProjects: false,
+      canManageProjectMembers: false,
+      canViewProjectCredentials: false,
+      // Tasks (Phase 3)
+      canViewAllTasks: false,
+      canCreateTasks: false,
+      canEditAllTasks: false,
+      canDeleteAllTasks: false,
+      canAssignTasks: false,
     },
   });
   const [loading, setLoading] = useState(false);
@@ -47,15 +63,31 @@ export default function RoleModal({ isOpen, onClose, onSuccess, role }: RoleModa
         description: '',
         color: '#3B82F6',
         permissions: {
+          // Users
           canViewUsers: false,
           canCreateUsers: false,
           canEditUsers: false,
           canDeleteUsers: false,
+          // Roles
           canViewRoles: false,
           canCreateRoles: false,
           canEditRoles: false,
           canDeleteRoles: false,
+          // Logs
           canViewLogs: false,
+          // Projects
+          canViewAllProjects: false,
+          canCreateProjects: false,
+          canEditProjects: false,
+          canDeleteProjects: false,
+          canManageProjectMembers: false,
+          canViewProjectCredentials: false,
+          // Tasks (Phase 3)
+          canViewAllTasks: false,
+          canCreateTasks: false,
+          canEditAllTasks: false,
+          canDeleteAllTasks: false,
+          canAssignTasks: false,
         },
       });
     }
@@ -84,7 +116,7 @@ export default function RoleModal({ isOpen, onClose, onSuccess, role }: RoleModa
 
   const permissionGroups = [
     {
-      title: 'Utilisateurs',
+      title: '👤 Utilisateurs',
       permissions: [
         { key: 'canViewUsers', label: 'Voir les utilisateurs' },
         { key: 'canCreateUsers', label: 'Créer des utilisateurs' },
@@ -93,7 +125,7 @@ export default function RoleModal({ isOpen, onClose, onSuccess, role }: RoleModa
       ],
     },
     {
-      title: 'Rôles',
+      title: '🛡️ Rôles',
       permissions: [
         { key: 'canViewRoles', label: 'Voir les rôles' },
         { key: 'canCreateRoles', label: 'Créer des rôles' },
@@ -102,7 +134,28 @@ export default function RoleModal({ isOpen, onClose, onSuccess, role }: RoleModa
       ],
     },
     {
-      title: 'Système',
+      title: '📁 Projets',
+      permissions: [
+        { key: 'canViewAllProjects', label: 'Voir tous les projets' },
+        { key: 'canCreateProjects', label: 'Créer des projets' },
+        { key: 'canEditProjects', label: 'Modifier tous les projets' },
+        { key: 'canDeleteProjects', label: 'Supprimer tous les projets' },
+        { key: 'canManageProjectMembers', label: 'Gérer les membres des projets' },
+        { key: 'canViewProjectCredentials', label: 'Voir les mots de passe des projets' },
+      ],
+    },
+    {
+      title: '✅ Tâches (Phase 3)',
+      permissions: [
+        { key: 'canViewAllTasks', label: 'Voir toutes les tâches' },
+        { key: 'canCreateTasks', label: 'Créer des tâches' },
+        { key: 'canEditAllTasks', label: 'Modifier toutes les tâches' },
+        { key: 'canDeleteAllTasks', label: 'Supprimer toutes les tâches' },
+        { key: 'canAssignTasks', label: 'Assigner des tâches' },
+      ],
+    },
+    {
+      title: '📊 Système',
       permissions: [
         { key: 'canViewLogs', label: 'Voir les logs d\'activité' },
       ],

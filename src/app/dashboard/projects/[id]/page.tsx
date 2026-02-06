@@ -9,6 +9,8 @@ import Link from 'next/link';
 import ProjectModal from '@/components/modals/ProjectModal';
 import AddMemberModal from '@/components/modals/AddMemberModal';
 import CredentialModal from '@/components/modals/CredentialModal';
+import ConfirmModal from '@/components/ui/ConfirmModal';
+import PromptModal from '@/components/ui/PromptModal';
 
 type ProjectStatus = 'ACTIVE' | 'PAUSED' | 'ARCHIVED' | 'COMPLETED';
 
@@ -71,6 +73,15 @@ export default function ProjectDetailPage() {
   const [showAddMemberModal, setShowAddMemberModal] = useState(false);
   const [showCredentialModal, setShowCredentialModal] = useState(false);
   const [editingCredential, setEditingCredential] = useState<Credential | null>(null);
+  
+  // États des confirmations
+  const [showDeleteProjectConfirm, setShowDeleteProjectConfirm] = useState(false);
+  const [showRemoveMemberConfirm, setShowRemoveMemberConfirm] = useState(false);
+  const [memberToRemove, setMemberToRemove] = useState<{ userId: string; userName: string } | null>(null);
+  const [showChangeMemberRolePrompt, setShowChangeMemberRolePrompt] = useState(false);
+  const [memberToChangeRole, setMemberToChangeRole] = useState<{ userId: string; userName: string; currentRole: string } | null>(null);
+  const [showDeleteCredentialConfirm, setShowDeleteCredentialConfirm] = useState(false);
+  const [credentialToDelete, setCredentialToDelete] = useState<string | null>(null);
 
   useEffect(() => {
     loadProject();
@@ -143,15 +154,11 @@ export default function ProjectDetailPage() {
     }
   };
 
-  const deleteProject = async () => {
-    const confirmed = window.confirm(
-      '⚠️ ATTENTION : Cette action est irréversible !\n\n' +
-      `Êtes-vous sûr de vouloir supprimer le projet "${project?.name}" ?\n\n` +
-      'Toutes les données associées (membres, mots de passe) seront définitivement supprimées.'
-    );
-    
-    if (!confirmed) return;
+  const deleteProject = () => {
+    setShowDeleteProjectConfirm(true);
+  };
 
+  const confirmDeleteProject = async () => {
     try {
       await api.deleteProject(projectId);
       router.push('/dashboard/projects');
@@ -170,47 +177,32 @@ export default function ProjectDetailPage() {
     }
   };
 
-  const handleRemoveMember = async (userId: string, userName: string) => {
-    const confirmed = window.confirm(
-      `⚠️ ATTENTION : Cette action retirera l'accès au projet !\n\n` +
-      `Êtes-vous sûr de vouloir retirer ${userName} de ce projet ?\n\n` +
-      `Cet utilisateur perdra :\n` +
-      `- L'accès au projet et ses informations\n` +
-      `- L'accès aux mots de passe\n` +
-      `- L'accès aux tâches du projet`
-    );
-    
-    if (!confirmed) return;
+  const handleRemoveMember = (userId: string, userName: string) => {
+    setMemberToRemove({ userId, userName });
+    setShowRemoveMemberConfirm(true);
+  };
+
+  const confirmRemoveMember = async () => {
+    if (!memberToRemove) return;
 
     try {
-      await api.removeProjectMember(projectId, userId);
+      await api.removeProjectMember(projectId, memberToRemove.userId);
       await loadProject();
     } catch (error: any) {
       alert(error.error || 'Erreur lors de la suppression du membre');
     }
   };
 
-  const handleChangeMemberRole = async (userId: string, currentRole: string, userName: string) => {
-    const newRole = window.prompt(
-      `Changer le rôle de ${userName}\n\n` +
-      `Rôle actuel : ${currentRole}\n\n` +
-      `Entrez le nouveau rôle (tapez exactement) :\n` +
-      `- OWNER (Propriétaire - contrôle total)\n` +
-      `- MEMBER (Membre - peut modifier et révéler mots de passe)\n` +
-      `- VIEWER (Lecteur - lecture seule, ne peut pas révéler mots de passe)`,
-      currentRole
-    );
+  const handleChangeMemberRole = (userId: string, currentRole: string, userName: string) => {
+    setMemberToChangeRole({ userId, userName, currentRole });
+    setShowChangeMemberRolePrompt(true);
+  };
 
-    if (!newRole || newRole === currentRole) return;
-
-    const validRoles = ['OWNER', 'MEMBER', 'VIEWER'];
-    if (!validRoles.includes(newRole.toUpperCase())) {
-      alert('Rôle invalide. Utilisez : OWNER, MEMBER ou VIEWER');
-      return;
-    }
+  const confirmChangeMemberRole = async (newRole: string) => {
+    if (!memberToChangeRole) return;
 
     try {
-      await api.updateProjectMemberRole(projectId, userId, newRole.toUpperCase());
+      await api.updateProjectMemberRole(projectId, memberToChangeRole.userId, newRole);
       await loadProject();
     } catch (error: any) {
       alert(error.error || 'Erreur lors de la modification du rôle');
@@ -232,12 +224,16 @@ export default function ProjectDetailPage() {
     }
   };
 
-  const handleDeleteCredential = async (credentialId: string) => {
-    const confirmed = window.confirm('Êtes-vous sûr de vouloir supprimer ce mot de passe ?');
-    if (!confirmed) return;
+  const handleDeleteCredential = (credentialId: string) => {
+    setCredentialToDelete(credentialId);
+    setShowDeleteCredentialConfirm(true);
+  };
+
+  const confirmDeleteCredential = async () => {
+    if (!credentialToDelete) return;
 
     try {
-      await api.deleteProjectCredential(projectId, credentialId);
+      await api.deleteProjectCredential(projectId, credentialToDelete);
       await loadCredentials();
     } catch (error: any) {
       alert(error.error || 'Erreur lors de la suppression');
@@ -647,6 +643,72 @@ export default function ProjectDetailPage() {
         }}
         onSave={handleSaveCredential}
         credential={editingCredential}
+      />
+
+      {/* Delete Project Confirmation */}
+      <ConfirmModal
+        isOpen={showDeleteProjectConfirm}
+        onClose={() => setShowDeleteProjectConfirm(false)}
+        onConfirm={confirmDeleteProject}
+        title="Supprimer le projet"
+        message={project ? `Êtes-vous sûr de vouloir supprimer le projet "${project.name}" ?` : ''}
+        details={[
+          'Tous les membres perdront l\'accès',
+          'Tous les mots de passe seront supprimés',
+          'Toutes les tâches seront supprimées',
+        ]}
+        confirmText="Supprimer"
+        cancelText="Annuler"
+        variant="danger"
+      />
+
+      {/* Remove Member Confirmation */}
+      <ConfirmModal
+        isOpen={showRemoveMemberConfirm}
+        onClose={() => setShowRemoveMemberConfirm(false)}
+        onConfirm={confirmRemoveMember}
+        title="Retirer le membre du projet"
+        message={memberToRemove ? `Êtes-vous sûr de vouloir retirer ${memberToRemove.userName} de ce projet ?` : ''}
+        details={[
+          'L\'accès au projet et ses informations',
+          'L\'accès aux mots de passe',
+          'L\'accès aux tâches du projet',
+        ]}
+        confirmText="Retirer"
+        cancelText="Annuler"
+        variant="warning"
+      />
+
+      {/* Change Member Role Prompt */}
+      <PromptModal
+        isOpen={showChangeMemberRolePrompt}
+        onClose={() => setShowChangeMemberRolePrompt(false)}
+        onConfirm={confirmChangeMemberRole}
+        title="Changer le rôle du membre"
+        message={memberToChangeRole ? `Changer le rôle de ${memberToChangeRole.userName}` : ''}
+        inputType="select"
+        defaultValue={memberToChangeRole?.currentRole || 'MEMBER'}
+        options={[
+          { value: 'OWNER', label: '👑 Propriétaire - contrôle total' },
+          { value: 'MEMBER', label: '👤 Membre - peut modifier et révéler mots de passe' },
+          { value: 'VIEWER', label: '👁️ Lecteur - lecture seule' },
+        ]}
+      />
+
+      {/* Delete Credential Confirmation */}
+      <ConfirmModal
+        isOpen={showDeleteCredentialConfirm}
+        onClose={() => setShowDeleteCredentialConfirm(false)}
+        onConfirm={confirmDeleteCredential}
+        title="Supprimer le mot de passe"
+        message="Êtes-vous sûr de vouloir supprimer ce mot de passe ?"
+        details={[
+          'Cette action est irréversible',
+          'Le mot de passe sera définitivement supprimé',
+        ]}
+        confirmText="Supprimer"
+        cancelText="Annuler"
+        variant="danger"
       />
     </div>
   );
