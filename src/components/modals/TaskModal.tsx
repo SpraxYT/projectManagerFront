@@ -5,6 +5,7 @@ import Modal from '@/components/ui/Modal';
 import Input from '@/components/ui/Input';
 import Button from '@/components/ui/Button';
 import ConfirmModal from '@/components/ui/ConfirmModal';
+import Toast from '@/components/ui/Toast';
 import { api } from '@/lib/api';
 import { useAuthStore } from '@/store/authStore';
 
@@ -47,8 +48,13 @@ export default function TaskModal({
   const [newSubtaskTitle, setNewSubtaskTitle] = useState('');
   const [newComment, setNewComment] = useState('');
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [toastMessage, setToastMessage] = useState<{ message: string; type: 'success' | 'error' | 'warning' } | null>(null);
 
   const isNewTask = !task?.id;
+
+  const showToast = (message: string, type: 'success' | 'error' | 'warning' = 'error') => {
+    setToastMessage({ message, type });
+  };
 
   useEffect(() => {
     if (isOpen) {
@@ -111,7 +117,7 @@ export default function TaskModal({
 
   const handleSave = async () => {
     if (!title.trim()) {
-      alert('Le titre est requis');
+      showToast('Le titre est requis', 'warning');
       return;
     }
 
@@ -158,7 +164,7 @@ export default function TaskModal({
 
       onSave();
     } catch (error: any) {
-      alert(error.error || 'Erreur lors de l\'enregistrement');
+      showToast(error.error || 'Erreur lors de l\'enregistrement', 'error');
     } finally {
       setLoading(false);
     }
@@ -171,7 +177,7 @@ export default function TaskModal({
       await api.deleteTask(task.id);
       onSave();
     } catch (error: any) {
-      alert(error.error || 'Erreur lors de la suppression');
+      showToast(error.error || 'Erreur lors de la suppression', 'error');
     }
   };
 
@@ -184,7 +190,7 @@ export default function TaskModal({
       setSubtasks([...subtasks, response.subtask]);
       setNewSubtaskTitle('');
     } catch (error: any) {
-      alert(error.error || 'Erreur');
+      showToast(error.error || 'Erreur lors de l\'ajout', 'error');
     }
   };
 
@@ -193,7 +199,7 @@ export default function TaskModal({
       const response = await api.toggleSubtask(subtaskId);
       setSubtasks(subtasks.map((s) => (s.id === subtaskId ? response.subtask : s)));
     } catch (error: any) {
-      alert(error.error || 'Erreur');
+      showToast(error.error || 'Erreur', 'error');
     }
   };
 
@@ -202,7 +208,7 @@ export default function TaskModal({
       await api.deleteSubtask(subtaskId);
       setSubtasks(subtasks.filter((s) => s.id !== subtaskId));
     } catch (error: any) {
-      alert(error.error || 'Erreur');
+      showToast(error.error || 'Erreur lors de la suppression', 'error');
     }
   };
 
@@ -215,7 +221,7 @@ export default function TaskModal({
       setComments([...comments, response.comment]);
       setNewComment('');
     } catch (error: any) {
-      alert(error.error || 'Erreur');
+      showToast(error.error || 'Erreur lors de l\'ajout', 'error');
     }
   };
 
@@ -224,7 +230,7 @@ export default function TaskModal({
       await api.deleteComment(commentId);
       setComments(comments.filter((c) => c.id !== commentId));
     } catch (error: any) {
-      alert(error.error || 'Erreur');
+      showToast(error.error || 'Erreur lors de la suppression', 'error');
     }
   };
 
@@ -572,6 +578,15 @@ export default function TaskModal({
         cancelText="Annuler"
         variant="danger"
       />
+
+      {/* Toast */}
+      {toastMessage && (
+        <Toast
+          message={toastMessage.message}
+          type={toastMessage.type}
+          onClose={() => setToastMessage(null)}
+        />
+      )}
     </>
   );
 }
