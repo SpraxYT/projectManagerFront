@@ -232,6 +232,18 @@ class ApiClient {
   async duplicateRole(id: string, name: string) {
     return this.post<any>(`/roles/${id}/duplicate`, { name });
   }
+
+  // ============================================================================
+  // SETTINGS ENDPOINTS
+  // ============================================================================
+
+  async getSettings() {
+    return this.get<any>('/settings');
+  }
+
+  async updateSettings(data: any) {
+    return this.put<any>('/settings', data);
+  }
 }
 
 export const api = new ApiClient(API_URL);

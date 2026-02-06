@@ -153,14 +153,23 @@ export default function UserModal({ isOpen, onClose, onSuccess, user }: UserModa
             Rôle <span className="text-red-500">*</span>
           </label>
           <select
-            value={formData.role}
+            value={formData.role === 'CUSTOM' && formData.customRoleId ? `CUSTOM:${formData.customRoleId}` : formData.role}
             onChange={(e) => {
-              const newRole = e.target.value;
-              setFormData({ 
-                ...formData, 
-                role: newRole,
-                customRoleId: newRole === 'CUSTOM' ? (customRoles[0]?.id || null) : null
-              });
+              const value = e.target.value;
+              if (value.startsWith('CUSTOM:')) {
+                const customRoleId = value.split(':')[1];
+                setFormData({ 
+                  ...formData, 
+                  role: 'CUSTOM',
+                  customRoleId: customRoleId
+                });
+              } else {
+                setFormData({ 
+                  ...formData, 
+                  role: value,
+                  customRoleId: null
+                });
+              }
             }}
             className="w-full rounded-lg border border-gray-300 px-4 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
             required
@@ -173,32 +182,15 @@ export default function UserModal({ isOpen, onClose, onSuccess, user }: UserModa
             </optgroup>
             {customRoles.length > 0 && (
               <optgroup label="Rôles personnalisés">
-                <option value="CUSTOM">Rôle personnalisé</option>
+                {customRoles.map((role) => (
+                  <option key={role.id} value={`CUSTOM:${role.id}`}>
+                    {role.name}
+                  </option>
+                ))}
               </optgroup>
             )}
           </select>
         </div>
-
-        {formData.role === 'CUSTOM' && customRoles.length > 0 && (
-          <div>
-            <label className="mb-2 block text-sm font-medium text-gray-700">
-              Sélectionner le rôle personnalisé <span className="text-red-500">*</span>
-            </label>
-            <select
-              value={formData.customRoleId || ''}
-              onChange={(e) => setFormData({ ...formData, customRoleId: e.target.value })}
-              className="w-full rounded-lg border border-gray-300 px-4 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-              required
-            >
-              <option value="">Choisir un rôle...</option>
-              {customRoles.map((role) => (
-                <option key={role.id} value={role.id}>
-                  {role.name}
-                </option>
-              ))}
-            </select>
-          </div>
-        )}
 
         {user && (
           <div className="flex items-center">

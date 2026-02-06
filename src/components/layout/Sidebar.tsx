@@ -1,14 +1,31 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/authStore';
 import { getRoleLabel } from '@/lib/utils';
+import { api } from '@/lib/api';
 
 export default function Sidebar() {
   const pathname = usePathname();
   const router = useRouter();
   const { user, logout } = useAuthStore();
+  const [instanceName, setInstanceName] = useState('ProjectManager');
+
+  useEffect(() => {
+    const loadSettings = async () => {
+      try {
+        const response = await api.getSettings();
+        if (response.settings?.instanceName) {
+          setInstanceName(response.settings.instanceName);
+        }
+      } catch (error) {
+        console.error('Erreur lors du chargement des paramètres:', error);
+      }
+    };
+    loadSettings();
+  }, []);
 
   const handleLogout = async () => {
     await logout();
@@ -60,7 +77,7 @@ export default function Sidebar() {
       {/* Logo */}
       <div className="flex h-16 items-center justify-center border-b border-gray-800 px-4">
         <h1 className="text-xl font-bold text-white">
-          {process.env.NEXT_PUBLIC_INSTANCE_NAME || 'ProjectManager'}
+          {instanceName}
         </h1>
       </div>
 
