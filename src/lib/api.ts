@@ -307,6 +307,128 @@ class ApiClient {
   async deleteProjectCredential(projectId: string, credentialId: string) {
     return this.delete<any>(`/projects/${projectId}/credentials/${credentialId}`);
   }
+
+  // ============================================================================
+  // PHASE 3: KANBAN & TASKS
+  // ============================================================================
+
+  // Board & Columns
+  async getBoard(projectId: string) {
+    return this.get<any>(`/projects/${projectId}/board`);
+  }
+
+  async createColumn(projectId: string, data: { name: string; color?: string }) {
+    return this.post<any>(`/projects/${projectId}/board/columns`, data);
+  }
+
+  async updateColumn(columnId: string, data: { name?: string; color?: string }) {
+    return this.patch<any>(`/columns/${columnId}`, data);
+  }
+
+  async reorderColumns(columnIds: string[]) {
+    return this.patch<any>(`/columns/reorder`, { columnIds });
+  }
+
+  async deleteColumn(columnId: string) {
+    return this.delete<any>(`/columns/${columnId}`);
+  }
+
+  // Tasks
+  async getAllTasks(projectId: string) {
+    return this.get<any>(`/projects/${projectId}/tasks`);
+  }
+
+  async getTaskById(taskId: string) {
+    return this.get<any>(`/tasks/${taskId}`);
+  }
+
+  async createTask(columnId: string, data: any) {
+    return this.post<any>(`/columns/${columnId}/tasks`, data);
+  }
+
+  async updateTask(taskId: string, data: any) {
+    return this.patch<any>(`/tasks/${taskId}`, data);
+  }
+
+  async moveTask(taskId: string, data: { columnId: string; position: number }) {
+    return this.patch<any>(`/tasks/${taskId}/move`, data);
+  }
+
+  async deleteTask(taskId: string) {
+    return this.delete<any>(`/tasks/${taskId}`);
+  }
+
+  // Task Assignments
+  async assignTask(taskId: string, userId: string) {
+    return this.post<any>(`/tasks/${taskId}/assign`, { userId });
+  }
+
+  async unassignTask(taskId: string, userId: string) {
+    return this.delete<any>(`/tasks/${taskId}/assign/${userId}`);
+  }
+
+  // Labels
+  async getLabels(projectId: string) {
+    return this.get<any>(`/projects/${projectId}/labels`);
+  }
+
+  async createLabel(projectId: string, data: any) {
+    return this.post<any>(`/projects/${projectId}/labels`, data);
+  }
+
+  async updateLabel(labelId: string, data: any) {
+    return this.patch<any>(`/labels/${labelId}`, data);
+  }
+
+  async deleteLabel(labelId: string) {
+    return this.delete<any>(`/labels/${labelId}`);
+  }
+
+  async addLabelToTask(taskId: string, labelId: string) {
+    return this.post<any>(`/tasks/${taskId}/labels`, { labelId });
+  }
+
+  async removeLabelFromTask(taskId: string, labelId: string) {
+    return this.delete<any>(`/tasks/${taskId}/labels/${labelId}`);
+  }
+
+  // Subtasks
+  async getSubtasks(taskId: string) {
+    return this.get<any>(`/tasks/${taskId}/subtasks`);
+  }
+
+  async createSubtask(taskId: string, data: { title: string }) {
+    return this.post<any>(`/tasks/${taskId}/subtasks`, data);
+  }
+
+  async updateSubtask(subtaskId: string, data: any) {
+    return this.patch<any>(`/subtasks/${subtaskId}`, data);
+  }
+
+  async toggleSubtask(subtaskId: string) {
+    return this.patch<any>(`/subtasks/${subtaskId}/toggle`, {});
+  }
+
+  async deleteSubtask(subtaskId: string) {
+    return this.delete<any>(`/subtasks/${subtaskId}`);
+  }
+
+  // Comments
+  async getComments(taskId: string) {
+    return this.get<any>(`/tasks/${taskId}/comments`);
+  }
+
+  async createComment(taskId: string, data: { content: string }) {
+    return this.post<any>(`/tasks/${taskId}/comments`, data);
+  }
+
+  async updateComment(commentId: string, data: { content: string }) {
+    return this.patch<any>(`/comments/${commentId}`, data);
+  }
+
+  async deleteComment(commentId: string) {
+    return this.delete<any>(`/comments/${commentId}`);
+  }
 }
 
 export const api = new ApiClient(API_URL);

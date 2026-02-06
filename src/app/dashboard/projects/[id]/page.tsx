@@ -11,6 +11,7 @@ import AddMemberModal from '@/components/modals/AddMemberModal';
 import CredentialModal from '@/components/modals/CredentialModal';
 import ConfirmModal from '@/components/ui/ConfirmModal';
 import PromptModal from '@/components/ui/PromptModal';
+import KanbanBoard from '@/components/kanban/KanbanBoard';
 
 type ProjectStatus = 'ACTIVE' | 'PAUSED' | 'ARCHIVED' | 'COMPLETED';
 
@@ -65,7 +66,7 @@ export default function ProjectDetailPage() {
   const [project, setProject] = useState<Project | null>(null);
   const [credentials, setCredentials] = useState<Credential[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'info' | 'members' | 'credentials'>('info');
+  const [activeTab, setActiveTab] = useState<'kanban' | 'members' | 'credentials' | 'settings'>('kanban');
   const [revealedPasswords, setRevealedPasswords] = useState<Record<string, string>>({});
   
   // États des modals
@@ -321,9 +322,10 @@ export default function ProjectDetailPage() {
       <div className="mb-6 border-b border-gray-200">
         <nav className="flex space-x-8">
           {[
-            { id: 'info', label: 'Informations', icon: 'ℹ️' },
+            { id: 'kanban', label: 'Kanban', icon: '📋' },
             { id: 'members', label: 'Membres', icon: '👥', count: project.members.length },
             { id: 'credentials', label: 'Mots de passe', icon: '🔑', count: project._count.credentials },
+            { id: 'settings', label: 'Paramètres', icon: '⚙️' },
           ].map((tab) => (
             <button
               key={tab.id}
@@ -349,7 +351,13 @@ export default function ProjectDetailPage() {
 
       {/* Content */}
       <div>
-        {activeTab === 'info' && (
+        {activeTab === 'kanban' && (
+          <div className="h-[calc(100vh-280px)]">
+            <KanbanBoard projectId={projectId} canEdit={canManageMembers()} />
+          </div>
+        )}
+
+        {activeTab === 'settings' && (
           <div className="space-y-6">
             <div className="rounded-lg bg-white p-6 shadow">
               <h2 className="text-lg font-semibold text-gray-900 mb-4">Détails du projet</h2>
